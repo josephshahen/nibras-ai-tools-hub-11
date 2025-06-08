@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageCircle, X, Minimize2, Maximize2, Move } from 'lucide-react';
+import { MessageCircle, X, Minimize2, Maximize2, Move, Sparkles, Edit3 } from 'lucide-react';
 import { chatWithAI } from '@/services/aiService';
 
 interface FloatingAIAssistantProps {
@@ -15,7 +15,7 @@ const FloatingAIAssistant = ({ context, onApply }: FloatingAIAssistantProps) => 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Array<{id: number, text: string, isBot: boolean}>>([
-    { id: 1, text: 'مرحباً! أنا مساعدك الذكي. كيف يمكنني مساعدتك في التعديل؟', isBot: true }
+    { id: 1, text: 'مرحباً! أنا مساعدك الذكي للتعديل والتحسين. كيف يمكنني مساعدتك؟', isBot: true }
   ]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -72,7 +72,19 @@ const FloatingAIAssistant = ({ context, onApply }: FloatingAIAssistantProps) => 
     try {
       let enhancedPrompt = messageToSend;
       if (context) {
-        enhancedPrompt = `السياق: ${context}\n\nالطلب: ${messageToSend}\n\nقدم اقتراحات للتعديل والتحسين بناءً على السياق المعطى.`;
+        enhancedPrompt = `السياق الحالي: ${context}
+
+الطلب من المستخدم: ${messageToSend}
+
+قدم اقتراحات محددة وعملية للتعديل والتحسين بناءً على السياق. اجعل اقتراحاتك:
+- محددة وقابلة للتطبيق مباشرة
+- مناسبة للسياق المعطى
+- مفيدة للمستخدم
+- واضحة ومختصرة
+
+إذا كان السياق متعلق بالصور، اقترح تعديلات على الوصف أو النمط
+إذا كان متعلق بالكود، اقترح تحسينات أو ميزات جديدة
+إذا كان متعلق بالمواقع، اقترح تحسينات على التصميم أو المحتوى`;
       }
 
       const conversationHistory = messages.slice(-10).map(msg => ({
@@ -107,14 +119,53 @@ const FloatingAIAssistant = ({ context, onApply }: FloatingAIAssistantProps) => 
     }
   };
 
+  const getSmartSuggestions = () => {
+    if (!context) return [];
+    
+    if (context.includes('مولد الصور')) {
+      return [
+        'حسّن جودة الوصف',
+        'اقترح نمط فني مختلف',
+        'أضف تفاصيل أكثر للصورة'
+      ];
+    } else if (context.includes('مساعد البرمجة')) {
+      return [
+        'أضف معالجة للأخطاء',
+        'حسّن أداء الكود',
+        'اقترح ميزات جديدة'
+      ];
+    } else if (context.includes('مولد المواقع')) {
+      return [
+        'حسّن تصميم الموقع',
+        'أضف أقسام جديدة',
+        'اقترح محتوى أفضل'
+      ];
+    } else if (context.includes('شات بوت')) {
+      return [
+        'اطرح سؤال أعمق',
+        'اطلب شرح مفصل',
+        'اقترح موضوع جديد'
+      ];
+    }
+    
+    return [
+      'كيف يمكنني التحسين؟',
+      'اقترح تعديلات',
+      'ما هي أفضل الممارسات؟'
+    ];
+  };
+
   if (!isOpen) {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full btn-gradient shadow-lg hover:shadow-xl transition-all duration-300"
+        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full btn-gradient shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse"
         style={{ transform: 'scale(1.05)' }}
       >
-        <MessageCircle size={24} />
+        <div className="flex flex-col items-center">
+          <Sparkles size={20} />
+          <span className="text-xs font-cairo">AI</span>
+        </div>
       </Button>
     );
   }
@@ -122,17 +173,17 @@ const FloatingAIAssistant = ({ context, onApply }: FloatingAIAssistantProps) => 
   return (
     <Card
       ref={cardRef}
-      className="fixed z-50 bg-black/90 backdrop-blur-sm border-white/20 shadow-2xl"
+      className="fixed z-50 bg-black/95 backdrop-blur-sm border-white/20 shadow-2xl"
       style={{
         left: position.x,
         top: position.y,
-        width: isMinimized ? '300px' : '400px',
-        height: isMinimized ? '60px' : '500px',
+        width: isMinimized ? '350px' : '450px',
+        height: isMinimized ? '60px' : '550px',
         cursor: isDragging ? 'grabbing' : 'default'
       }}
     >
       <CardHeader 
-        className="pb-2 cursor-grab active:cursor-grabbing"
+        className="pb-2 cursor-grab active:cursor-grabbing bg-gradient-to-r from-blue-600/20 to-purple-600/20"
         onMouseDown={handleMouseDown}
       >
         <CardTitle className="text-right font-cairo text-white flex items-center justify-between text-sm">
@@ -155,14 +206,15 @@ const FloatingAIAssistant = ({ context, onApply }: FloatingAIAssistantProps) => 
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            🤖 المساعد الذكي
+            <Sparkles size={16} className="text-blue-400 animate-pulse" />
+            🤖 المساعد الذكي للتعديل
             <Move size={16} className="opacity-50" />
           </div>
         </CardTitle>
       </CardHeader>
 
       {!isMinimized && (
-        <CardContent className="space-y-4 h-[400px] flex flex-col">
+        <CardContent className="space-y-4 h-[450px] flex flex-col">
           <div className="flex-1 overflow-y-auto space-y-3 p-2 bg-black/20 rounded-lg max-h-60">
             {messages.map((message) => (
               <div
@@ -172,7 +224,7 @@ const FloatingAIAssistant = ({ context, onApply }: FloatingAIAssistantProps) => 
                 <div
                   className={`max-w-[80%] p-2 rounded-lg font-cairo text-xs ${
                     message.isBot
-                      ? 'bg-white/10 text-white'
+                      ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-blue-400/30'
                       : 'bg-primary text-primary-foreground'
                   }`}
                 >
@@ -182,22 +234,40 @@ const FloatingAIAssistant = ({ context, onApply }: FloatingAIAssistantProps) => 
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white/10 text-white p-2 rounded-lg font-cairo text-xs">
+                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white p-2 rounded-lg font-cairo text-xs border border-blue-400/30">
                   <div className="flex gap-1">
-                    <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
-                    <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></div>
+                    <div className="w-1 h-1 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
+          {/* اقتراحات سريعة */}
+          <div className="space-y-2">
+            <div className="text-xs text-gray-400 font-cairo">⚡ اقتراحات سريعة:</div>
+            <div className="grid grid-cols-1 gap-1">
+              {getSmartSuggestions().map((suggestion, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-cairo border-white/20 hover:bg-white/10 h-auto py-1 text-wrap"
+                  onClick={() => setCurrentMessage(suggestion)}
+                >
+                  {suggestion}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Textarea
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
-              placeholder="اطلب تعديلات أو اقتراحات..."
+              placeholder="اطلب تعديلات أو اقتراحات محددة..."
               className="resize-none font-cairo text-right bg-white/5 border-white/20 text-xs h-16"
               onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
             />
@@ -208,19 +278,27 @@ const FloatingAIAssistant = ({ context, onApply }: FloatingAIAssistantProps) => 
                 disabled={isLoading || !currentMessage.trim()}
                 className="btn-gradient flex-1 text-xs py-1"
               >
+                <MessageCircle size={12} className="mr-1" />
                 إرسال
               </Button>
               {onApply && (
                 <Button 
                   onClick={applyLastSuggestion}
                   variant="outline"
-                  className="border-white/20 hover:bg-white/10 text-xs py-1"
+                  className="border-green-400/40 hover:bg-green-400/10 text-green-400 text-xs py-1"
                 >
+                  <Edit3 size={12} className="mr-1" />
                   تطبيق
                 </Button>
               )}
             </div>
           </div>
+
+          {context && (
+            <div className="text-xs text-gray-500 font-cairo bg-white/5 p-2 rounded">
+              <strong>السياق:</strong> {context.length > 100 ? context.substring(0, 100) + '...' : context}
+            </div>
+          )}
         </CardContent>
       )}
     </Card>

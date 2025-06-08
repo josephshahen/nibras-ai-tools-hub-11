@@ -1,9 +1,11 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Home } from 'lucide-react';
 import { chatWithAI } from '@/services/aiService';
+import FloatingAIAssistant from '@/components/common/FloatingAIAssistant';
 
 interface ChatBotProps {
   onNavigate?: (section: string) => void;
@@ -55,8 +57,21 @@ const ChatBot = ({ onNavigate }: ChatBotProps) => {
     "ما هو الذكاء الاصطناعي؟",
     "كيف أتعلم البرمجة؟",
     "اشرح لي الفرق بين React و Vue",
-    "ما هي أفضل لغات البرمجة للمبتدئين؟"
+    "ما هي أفضل لغات البرمجة للمبتدئين؟",
+    "كيف أحسن أداء موقعي؟",
+    "ما هي أحدث تقنيات الويب؟"
   ];
+
+  const handleAIApply = (suggestion: string) => {
+    // تطبيق اقتراحات المساعد الذكي في الشات
+    setCurrentMessage(suggestion);
+  };
+
+  const getCurrentContext = () => {
+    const lastUserMessage = [...messages].reverse().find(m => !m.isBot);
+    const lastBotMessage = [...messages].reverse().find(m => m.isBot);
+    return `شات بوت ذكي - آخر سؤال: ${lastUserMessage?.text || 'لا يوجد'} - آخر إجابة: ${lastBotMessage?.text?.substring(0, 100) || 'لا يوجد'}...`;
+  };
 
   return (
     <div className="min-h-screen py-20 px-4">
@@ -77,7 +92,7 @@ const ChatBot = ({ onNavigate }: ChatBotProps) => {
             <span className="text-gradient">شات بوت</span> ذكي
           </h1>
           <p className="text-xl text-gray-300 font-cairo">
-            تحدث مع مساعدك الذكي واحصل على إجابات فورية
+            تحدث مع مساعدك الذكي واحصل على إجابات فورية مع إمكانية التعديل والتحسين
           </p>
         </div>
 
@@ -85,7 +100,7 @@ const ChatBot = ({ onNavigate }: ChatBotProps) => {
         <Card className="bg-black/40 backdrop-blur-sm border-white/10 mb-6">
           <CardHeader>
             <CardTitle className="text-right font-cairo text-white flex items-center justify-end gap-2">
-              💬 المحادثة
+              💬 المحادثة الذكية
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -141,7 +156,7 @@ const ChatBot = ({ onNavigate }: ChatBotProps) => {
         {/* أسئلة سريعة */}
         <Card className="bg-black/40 backdrop-blur-sm border-white/10">
           <CardHeader>
-            <CardTitle className="text-right font-cairo text-white">⚡ أسئلة سريعة</CardTitle>
+            <CardTitle className="text-right font-cairo text-white">⚡ أسئلة سريعة ومتطورة</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -159,6 +174,11 @@ const ChatBot = ({ onNavigate }: ChatBotProps) => {
           </CardContent>
         </Card>
       </div>
+
+      <FloatingAIAssistant 
+        context={getCurrentContext()}
+        onApply={handleAIApply}
+      />
     </div>
   );
 };
