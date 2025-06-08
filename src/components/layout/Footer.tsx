@@ -1,6 +1,4 @@
 
-import LanguageSelector from '../common/LanguageSelector';
-
 const Footer = () => {
   return (
     <footer className="bg-black/50 backdrop-blur-sm border-t border-white/10 py-12">
@@ -14,9 +12,6 @@ const Footer = () => {
               </div>
               <div className="text-gradient font-bold text-xl font-cairo">
                 نبراس AI
-              </div>
-              <div className="mr-4">
-                <LanguageSelector />
               </div>
             </div>
             <p className="text-gray-400 font-cairo leading-relaxed">

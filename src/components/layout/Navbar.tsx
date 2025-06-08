@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import LanguageSelector from '../common/LanguageSelector';
 
 interface NavbarProps {
   activeSection: string;
@@ -26,17 +27,20 @@ const Navbar = ({ activeSection, onNavigate }: NavbarProps) => {
     <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-black/20 border-b border-white/10">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* اللوجو */}
-          <div 
-            className="flex items-center gap-2 cursor-pointer group"
-            onClick={() => onNavigate('home')}
-          >
-            <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center glow-primary group-hover:scale-110 transition-transform">
-              <span className="text-white font-bold text-xl">ن</span>
+          {/* اللوجو ومنتقي اللغة */}
+          <div className="flex items-center gap-4">
+            <div 
+              className="flex items-center gap-2 cursor-pointer group"
+              onClick={() => onNavigate('home')}
+            >
+              <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center glow-primary group-hover:scale-110 transition-transform">
+                <span className="text-white font-bold text-xl">ن</span>
+              </div>
+              <div className="text-gradient font-bold text-xl font-cairo">
+                نبراس AI
+              </div>
             </div>
-            <div className="text-gradient font-bold text-xl font-cairo">
-              نبراس AI
-            </div>
+            <LanguageSelector />
           </div>
 
           {/* القائمة الرئيسية - الكمبيوتر */}
