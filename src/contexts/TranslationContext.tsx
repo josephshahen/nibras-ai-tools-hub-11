@@ -31,8 +31,8 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
       return browserLang;
     }
     
-    // Default to Arabic
-    return 'ar';
+    // Default to English instead of Arabic
+    return 'en';
   });
 
   const setLanguage = (language: SupportedLanguage) => {
