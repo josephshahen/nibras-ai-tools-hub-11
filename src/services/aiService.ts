@@ -28,7 +28,61 @@ export const openRouterRequest = async (messages: any[], model: string = 'meta-l
   return data.choices[0].message.content;
 };
 
-// خدمة Replicate لتوليد الصور المحسنة
+// خدمة Hugging Face لتوليد الصور المحسنة
+export const generateImageWithHuggingFace = async (prompt: string, style: string = 'realistic') => {
+  // تحسين الوصف حسب النمط المطلوب
+  let enhancedPrompt = prompt;
+  
+  switch (style) {
+    case 'anime':
+      enhancedPrompt = `anime style, ${prompt}, beautiful anime art, studio quality, detailed anime illustration, vibrant colors, masterpiece`;
+      break;
+    case 'cartoon':
+      enhancedPrompt = `cartoon style, ${prompt}, colorful cartoon art, disney style, animated, fun and bright, high quality`;
+      break;
+    case 'digital-art':
+      enhancedPrompt = `digital art, ${prompt}, concept art, artstation quality, digital painting, highly detailed, masterpiece`;
+      break;
+    case 'oil-painting':
+      enhancedPrompt = `oil painting, ${prompt}, classical art style, painterly, brush strokes, renaissance style, fine art`;
+      break;
+    case 'watercolor':
+      enhancedPrompt = `watercolor painting, ${prompt}, soft colors, flowing paint, artistic, delicate, beautiful watercolor`;
+      break;
+    default: // realistic
+      enhancedPrompt = `photorealistic, ${prompt}, high resolution, detailed, professional photography, sharp focus, 8k quality`;
+  }
+
+  // استخدام نموذج Stable Diffusion من Hugging Face
+  const response = await fetch('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      inputs: enhancedPrompt,
+      parameters: {
+        num_inference_steps: 50,
+        guidance_scale: 7.5,
+        width: 512,
+        height: 512,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Hugging Face API error: ${response.statusText}`);
+  }
+
+  // تحويل الاستجابة إلى blob ثم إلى URL
+  const blob = await response.blob();
+  const imageUrl = URL.createObjectURL(blob);
+  
+  return imageUrl;
+};
+
+// خدمة Replicate لتوليد الصور (احتياطي)
 export const generateImageWithReplicate = async (prompt: string, style: string = 'realistic') => {
   // تحسين الوصف حسب النمط المطلوب
   let enhancedPrompt = prompt;
