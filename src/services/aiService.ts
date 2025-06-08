@@ -1,6 +1,6 @@
 
 // خدمة الذكاء الاصطناعي المركزية
-const OPENROUTER_API_KEY = 'sk-or-v1-bb292bf3e30cb7a026c290d73722a7f8a545129256855e047f69ef0e904';
+const OPENROUTER_API_KEY = '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';
 const REPLICATE_API_KEY = 'r8_crQmT4Z2cEljF7RKmDoiZQJ9jnTltXu0Q0REm';
 const HUGGINGFACE_API_KEY = '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';
 
