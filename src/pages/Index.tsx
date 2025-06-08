@@ -19,21 +19,21 @@ const Index = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'chatbot':
-        return <ChatBot />;
+        return <ChatBot onNavigate={setActiveSection} />;
       case 'translator':
-        return <Translator />;
+        return <Translator onNavigate={setActiveSection} />;
       case 'summary':
-        return <ArticleSummary />;
+        return <ArticleSummary onNavigate={setActiveSection} />;
       case 'website':
-        return <WebsiteGenerator />;
+        return <WebsiteGenerator onNavigate={setActiveSection} />;
       case 'code':
-        return <CodeAssistant />;
+        return <CodeAssistant onNavigate={setActiveSection} />;
       case 'images':
-        return <ImageGenerator />;
+        return <ImageGenerator onNavigate={setActiveSection} />;
       case 'cv':
-        return <CVGenerator />;
+        return <CVGenerator onNavigate={setActiveSection} />;
       case 'games':
-        return <GamesDownload />;
+        return <GamesDownload onNavigate={setActiveSection} />;
       default:
         return (
           <>

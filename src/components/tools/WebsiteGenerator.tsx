@@ -1,13 +1,18 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Home } from 'lucide-react';
 import { generateWebsiteWithBuilderIO } from '@/services/aiService';
+import FloatingAIAssistant from '@/components/common/FloatingAIAssistant';
 
-const WebsiteGenerator = () => {
+interface WebsiteGeneratorProps {
+  onNavigate?: (section: string) => void;
+}
+
+const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('business');
@@ -121,10 +126,35 @@ const WebsiteGenerator = () => {
     }
   };
 
+  const handleAIApply = (suggestion: string) => {
+    if (suggestion.includes('تعديل') || suggestion.includes('عدل')) {
+      setEditPrompt(suggestion);
+      setEditMode(true);
+    } else if (suggestion.includes('اسم') || suggestion.includes('عنوان')) {
+      setTitle(suggestion);
+    } else if (suggestion.includes('وصف') || suggestion.includes('محتوى')) {
+      setDescription(suggestion);
+    }
+  };
+
+  const getCurrentContext = () => {
+    return `مولد المواقع - الاسم: ${title} - الوصف: ${description} - النوع: ${type} - ${generatedWebsite ? 'تم إنشاء موقع' : 'لم يتم إنشاء موقع بعد'}`;
+  };
+
   return (
     <div className="min-h-screen py-20 px-4">
       <div className="container mx-auto max-w-7xl">
         <div className="text-center mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <Button
+              onClick={() => onNavigate?.('home')}
+              variant="outline"
+              className="border-white/20 hover:bg-white/10 flex items-center gap-2"
+            >
+              <Home size={16} />
+              العودة للرئيسية
+            </Button>
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
             <span className="text-gradient">مولد المواقع</span> الاحترافي
           </h1>
@@ -369,6 +399,11 @@ const WebsiteGenerator = () => {
           </CardContent>
         </Card>
       </div>
+
+      <FloatingAIAssistant 
+        context={getCurrentContext()}
+        onApply={handleAIApply}
+      />
     </div>
   );
 };

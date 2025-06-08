@@ -2,9 +2,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Home } from 'lucide-react';
 import { chatWithAI } from '@/services/aiService';
 
-const ChatBot = () => {
+interface ChatBotProps {
+  onNavigate?: (section: string) => void;
+}
+
+const ChatBot = ({ onNavigate }: ChatBotProps) => {
   const [messages, setMessages] = useState<Array<{id: number, text: string, isBot: boolean}>>([
     { id: 1, text: 'مرحباً! أنا مساعدك الذكي. كيف يمكنني مساعدتك اليوم؟', isBot: true }
   ]);
@@ -58,6 +63,16 @@ const ChatBot = () => {
       <div className="container mx-auto max-w-4xl">
         {/* العنوان */}
         <div className="text-center mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <Button
+              onClick={() => onNavigate?.('home')}
+              variant="outline"
+              className="border-white/20 hover:bg-white/10 flex items-center gap-2"
+            >
+              <Home size={16} />
+              العودة للرئيسية
+            </Button>
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
             <span className="text-gradient">شات بوت</span> ذكي
           </h1>

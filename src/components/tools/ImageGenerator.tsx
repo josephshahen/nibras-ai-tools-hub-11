@@ -1,12 +1,17 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Home } from 'lucide-react';
 import { generateImageWithDeepAI } from '@/services/aiService';
+import FloatingAIAssistant from '@/components/common/FloatingAIAssistant';
 
-const ImageGenerator = () => {
+interface ImageGeneratorProps {
+  onNavigate?: (section: string) => void;
+}
+
+const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState('realistic');
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -110,10 +115,34 @@ const ImageGenerator = () => {
     }
   };
 
+  const handleAIApply = (suggestion: string) => {
+    // تطبيق اقتراحات المساعد الذكي
+    if (suggestion.includes('تعديل') || suggestion.includes('عدل')) {
+      setEditPrompt(suggestion);
+      setEditMode(true);
+    } else {
+      setPrompt(suggestion);
+    }
+  };
+
+  const getCurrentContext = () => {
+    return `مولد الصور - الوصف الحالي: ${prompt} - النمط: ${style} - ${generatedImages.length > 0 ? 'تم إنشاء صورة' : 'لم يتم إنشاء صورة بعد'}`;
+  };
+
   return (
     <div className="min-h-screen py-20 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <Button
+              onClick={() => onNavigate?.('home')}
+              variant="outline"
+              className="border-white/20 hover:bg-white/10 flex items-center gap-2"
+            >
+              <Home size={16} />
+              العودة للرئيسية
+            </Button>
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
             <span className="text-gradient">مولد الصور</span> المتطور
           </h1>
@@ -290,6 +319,11 @@ const ImageGenerator = () => {
           </CardContent>
         </Card>
       </div>
+
+      <FloatingAIAssistant 
+        context={getCurrentContext()}
+        onApply={handleAIApply}
+      />
     </div>
   );
 };

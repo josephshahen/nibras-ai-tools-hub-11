@@ -1,12 +1,17 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Home } from 'lucide-react';
 import { generateCodeWithOpenAI } from '@/services/aiService';
+import FloatingAIAssistant from '@/components/common/FloatingAIAssistant';
 
-const CodeAssistant = () => {
+interface CodeAssistantProps {
+  onNavigate?: (section: string) => void;
+}
+
+const CodeAssistant = ({ onNavigate }: CodeAssistantProps) => {
   const [prompt, setPrompt] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [generatedCode, setGeneratedCode] = useState('');
@@ -107,10 +112,35 @@ console.log("مرحباً! هذا مثال بسيط");
     window.URL.revokeObjectURL(url);
   };
 
+  const handleAIApply = (suggestion: string) => {
+    if (suggestion.includes('تعديل') || suggestion.includes('عدل')) {
+      setEditPrompt(suggestion);
+      setEditMode(true);
+    } else if (suggestion.includes('كود') || suggestion.includes('برمج')) {
+      setPrompt(suggestion);
+    } else {
+      setGeneratedCode(suggestion);
+    }
+  };
+
+  const getCurrentContext = () => {
+    return `مساعد البرمجة - الوصف: ${prompt} - اللغة: ${language} - ${generatedCode ? 'تم إنشاء كود' : 'لم يتم إنشاء كود بعد'}`;
+  };
+
   return (
     <div className="min-h-screen py-20 px-4">
       <div className="container mx-auto max-w-7xl">
         <div className="text-center mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <Button
+              onClick={() => onNavigate?.('home')}
+              variant="outline"
+              className="border-white/20 hover:bg-white/10 flex items-center gap-2"
+            >
+              <Home size={16} />
+              العودة للرئيسية
+            </Button>
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
             <span className="text-gradient">مساعد البرمجة</span> الذكي
           </h1>
@@ -316,6 +346,11 @@ console.log("مرحباً! هذا مثال بسيط");
           </CardContent>
         </Card>
       </div>
+
+      <FloatingAIAssistant 
+        context={getCurrentContext()}
+        onApply={handleAIApply}
+      />
     </div>
   );
 };
