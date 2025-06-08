@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { generateWebsite } from '@/services/aiService';
 
 const WebsiteGenerator = () => {
   const [websiteData, setWebsiteData] = useState({
@@ -39,9 +39,16 @@ const WebsiteGenerator = () => {
 
     setIsLoading(true);
     
-    // محاكاة توليد الموقع
-    setTimeout(() => {
-      const sampleCode = `<!DOCTYPE html>
+    try {
+      const result = await generateWebsite(
+        websiteData.title,
+        websiteData.description,
+        websiteData.type,
+        websiteData.color
+      );
+      setGeneratedCode(result);
+    } catch (error) {
+      setGeneratedCode(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -67,11 +74,10 @@ const WebsiteGenerator = () => {
         <p>&copy; 2024 ${websiteData.title}. جميع الحقوق محفوظة.</p>
     </div>
 </body>
-</html>`;
-      
-      setGeneratedCode(sampleCode);
+</html>`);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const downloadCode = () => {

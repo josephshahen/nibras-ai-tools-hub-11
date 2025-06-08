@@ -1,15 +1,13 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { generateImageWithReplicate } from '@/services/aiService';
 
 const ImageGenerator = () => {
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState('realistic');
-  const [size, setSize] = useState('512x512');
   const [generatedImage, setGeneratedImage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,13 +18,6 @@ const ImageGenerator = () => {
     { value: 'digital-art', label: '💻 فن رقمي', description: 'أعمال فنية رقمية حديثة' },
     { value: 'oil-painting', label: '🖼️ رسم زيتي', description: 'أسلوب اللوحات الزيتية الكلاسيكية' },
     { value: 'watercolor', label: '🎭 ألوان مائية', description: 'أسلوب الألوان المائية' }
-  ];
-
-  const imageSizes = [
-    { value: '512x512', label: '512×512 (مربع)' },
-    { value: '768x512', label: '768×512 (أفقي)' },
-    { value: '512x768', label: '512×768 (عمودي)' },
-    { value: '1024x1024', label: '1024×1024 (عالي الجودة)' }
   ];
 
   const promptExamples = [
@@ -41,12 +32,16 @@ const ImageGenerator = () => {
 
     setIsLoading(true);
     
-    // محاكاة توليد الصورة
-    setTimeout(() => {
-      // استخدام صورة تجريبية من Unsplash
+    try {
+      const imageUrl = await generateImageWithReplicate(prompt, style);
+      setGeneratedImage(imageUrl);
+    } catch (error) {
+      console.error('Image generation error:', error);
+      // استخدام صورة تجريبية في حالة الخطأ
       setGeneratedImage('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=512&h=512&fit=crop');
+    } finally {
       setIsLoading(false);
-    }, 3000);
+    }
   };
 
   const downloadImage = () => {
@@ -61,7 +56,6 @@ const ImageGenerator = () => {
   return (
     <div className="min-h-screen py-20 px-4">
       <div className="container mx-auto max-w-6xl">
-        {/* العنوان */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
             <span className="text-gradient">مولد</span> الصور
@@ -72,7 +66,6 @@ const ImageGenerator = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* منطقة الإعدادات */}
           <Card className="bg-black/40 backdrop-blur-sm border-white/10">
             <CardHeader>
               <CardTitle className="text-right font-cairo text-white flex items-center justify-end gap-2">
@@ -80,7 +73,6 @@ const ImageGenerator = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* وصف الصورة */}
               <div>
                 <label className="block text-sm font-cairo text-white mb-2">وصف الصورة</label>
                 <Textarea
@@ -94,7 +86,6 @@ const ImageGenerator = () => {
                 </div>
               </div>
 
-              {/* نمط الفن */}
               <div>
                 <label className="block text-sm font-cairo text-white mb-2">نمط الفن</label>
                 <Select value={style} onValueChange={setStyle}>
@@ -114,23 +105,6 @@ const ImageGenerator = () => {
                 </Select>
               </div>
 
-              {/* حجم الصورة */}
-              <div>
-                <label className="block text-sm font-cairo text-white mb-2">حجم الصورة</label>
-                <Select value={size} onValueChange={setSize}>
-                  <SelectTrigger className="bg-white/5 border-white/20 font-cairo">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black/90 border-white/20">
-                    {imageSizes.map((sizeOption) => (
-                      <SelectItem key={sizeOption.value} value={sizeOption.value} className="font-cairo">
-                        {sizeOption.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <Button 
                 onClick={handleGenerate}
                 disabled={isLoading || !prompt.trim()}
@@ -141,7 +115,6 @@ const ImageGenerator = () => {
             </CardContent>
           </Card>
 
-          {/* منطقة عرض الصورة */}
           <Card className="bg-black/40 backdrop-blur-sm border-white/10">
             <CardHeader>
               <CardTitle className="text-right font-cairo text-white flex items-center justify-between">
@@ -187,7 +160,6 @@ const ImageGenerator = () => {
                   <div className="text-xs text-gray-400 font-cairo">
                     <div>الوصف: {prompt}</div>
                     <div>النمط: {artStyles.find(s => s.value === style)?.label}</div>
-                    <div>الحجم: {size}</div>
                   </div>
                 </div>
               )}
@@ -195,7 +167,6 @@ const ImageGenerator = () => {
           </Card>
         </div>
 
-        {/* أمثلة سريعة */}
         <Card className="bg-black/40 backdrop-blur-sm border-white/10 mt-6">
           <CardHeader>
             <CardTitle className="text-right font-cairo text-white">⚡ أمثلة سريعة</CardTitle>

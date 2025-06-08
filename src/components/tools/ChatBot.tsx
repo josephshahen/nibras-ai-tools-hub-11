@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { chatWithAI } from '@/services/aiService';
 
 const ChatBot = () => {
   const [messages, setMessages] = useState<Array<{id: number, text: string, isBot: boolean}>>([
@@ -16,19 +16,34 @@ const ChatBot = () => {
 
     const userMessage = { id: Date.now(), text: currentMessage, isBot: false };
     setMessages(prev => [...prev, userMessage]);
+    const messageToSend = currentMessage;
     setCurrentMessage('');
     setIsLoading(true);
 
-    // محاكاة استجابة الشات بوت
-    setTimeout(() => {
+    try {
+      const conversationHistory = messages.slice(-10).map(msg => ({
+        role: msg.isBot ? 'assistant' : 'user',
+        content: msg.text
+      }));
+
+      const response = await chatWithAI(messageToSend, conversationHistory);
+      
       const botResponse = { 
         id: Date.now() + 1, 
-        text: `شكراً لك على سؤالك: "${currentMessage}". هذا مثال على رد الشات بوت. في النسخة الكاملة، سيتم ربط الموقع بخدمة ذكاء اصطناعي حقيقية لتقديم إجابات مفيدة ودقيقة.`, 
+        text: response, 
         isBot: true 
       };
       setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      const errorResponse = { 
+        id: Date.now() + 1, 
+        text: 'عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.', 
+        isBot: true 
+      };
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const quickQuestions = [

@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { generateCode } from '@/services/aiService';
 
 const CodeAssistant = () => {
   const [prompt, setPrompt] = useState('');
@@ -47,55 +47,14 @@ const CodeAssistant = () => {
 
     setIsLoading(true);
     
-    // محاكاة توليد الكود
-    setTimeout(() => {
-      const sampleCode = generateSampleCode(language, prompt);
-      setGeneratedCode(sampleCode);
+    try {
+      const result = await generateCode(prompt, language);
+      setGeneratedCode(result);
+    } catch (error) {
+      setGeneratedCode('عذراً، حدث خطأ في توليد الكود. يرجى المحاولة مرة أخرى.');
+    } finally {
       setIsLoading(false);
-    }, 2000);
-  };
-
-  const generateSampleCode = (lang: string, promptText: string) => {
-    const examples: { [key: string]: string } = {
-      javascript: `// كود JavaScript مولد حسب طلبك: "${promptText}"
-function sampleFunction() {
-    const message = "مرحباً من الذكاء الاصطناعي!";
-    console.log(message);
-    return message;
-}
-
-// استخدام الدالة
-sampleFunction();`,
-
-      python: `# كود Python مولد حسب طلبك: "${promptText}"
-def sample_function():
-    message = "مرحباً من الذكاء الاصطناعي!"
-    print(message)
-    return message
-
-# استخدام الدالة
-sample_function()`,
-
-      react: `// مكون React مولد حسب طلبك: "${promptText}"
-import React, { useState } from 'react';
-
-const SampleComponent = () => {
-    const [count, setCount] = useState(0);
-
-    return (
-        <div>
-            <h1>العداد: {count}</h1>
-            <button onClick={() => setCount(count + 1)}>
-                زيادة
-            </button>
-        </div>
-    );
-};
-
-export default SampleComponent;`
-    };
-
-    return examples[lang] || examples.javascript;
+    }
   };
 
   const copyCode = () => {
@@ -105,7 +64,6 @@ export default SampleComponent;`
   return (
     <div className="min-h-screen py-20 px-4">
       <div className="container mx-auto max-w-6xl">
-        {/* العنوان */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
             <span className="text-gradient">مساعد</span> البرمجة
@@ -116,7 +74,6 @@ export default SampleComponent;`
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* منطقة الإدخال */}
           <Card className="bg-black/40 backdrop-blur-sm border-white/10">
             <CardHeader>
               <CardTitle className="text-right font-cairo text-white flex items-center justify-end gap-2">
@@ -124,7 +81,6 @@ export default SampleComponent;`
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* اختيار اللغة */}
               <div>
                 <label className="block text-sm font-cairo text-white mb-2">لغة البرمجة</label>
                 <Select value={language} onValueChange={setLanguage}>
@@ -141,7 +97,6 @@ export default SampleComponent;`
                 </Select>
               </div>
 
-              {/* وصف المطلوب */}
               <div>
                 <label className="block text-sm font-cairo text-white mb-2">وصف الكود المطلوب</label>
                 <Textarea
@@ -162,7 +117,6 @@ export default SampleComponent;`
             </CardContent>
           </Card>
 
-          {/* منطقة الكود */}
           <Card className="bg-black/40 backdrop-blur-sm border-white/10">
             <CardHeader>
               <CardTitle className="text-right font-cairo text-white flex items-center justify-between">
@@ -205,7 +159,6 @@ export default SampleComponent;`
           </Card>
         </div>
 
-        {/* أمثلة سريعة */}
         <Card className="bg-black/40 backdrop-blur-sm border-white/10 mt-6">
           <CardHeader>
             <CardTitle className="text-right font-cairo text-white">⚡ أمثلة سريعة</CardTitle>

@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { summarizeText } from '@/services/aiService';
 
 const ArticleSummary = () => {
   const [articleText, setArticleText] = useState('');
@@ -16,29 +16,30 @@ const ArticleSummary = () => {
 
     setIsLoading(true);
     
-    // محاكاة التلخيص
-    setTimeout(() => {
-      const lengthText = summaryLength === 'short' ? 'مختصر' : summaryLength === 'medium' ? 'متوسط' : 'مفصل';
-      setSummary(`هذا ملخص ${lengthText} للمقال المدخل. في النسخة الكاملة، سيتم استخدام نماذج الذكاء الاصطناعي المتقدمة لتحليل النص وإنتاج ملخص دقيق ومفيد يحتوي على أهم النقاط والمعلومات الرئيسية من المقال الأصلي.`);
+    try {
+      const result = await summarizeText(articleText, summaryLength);
+      setSummary(result);
+    } catch (error) {
+      setSummary('عذراً، حدث خطأ في تلخيص النص. يرجى المحاولة مرة أخرى.');
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const sampleArticles = [
     {
       title: "مقال تقني عن الذكاء الاصطناعي",
-      content: "الذكاء الاصطناعي هو مجال متطور في علوم الحاسوب يهدف إلى إنشاء أنظمة قادرة على أداء مهام تتطلب ذكاءً بشرياً..."
+      content: "الذكاء الاصطناعي هو مجال متطور في علوم الحاسوب يهدف إلى إنشاء أنظمة قادرة على أداء مهام تتطلب ذكاءً بشرياً. يشمل هذا المجال العديد من التقنيات مثل التعلم الآلي والشبكات العصبية والمعالجة الطبيعية للغة. تطبيقات الذكاء الاصطناعي موجودة في كل مكان حولنا، من محركات البحث إلى السيارات ذاتية القيادة والمساعدات الصوتية الذكية."
     },
     {
       title: "مقال عن تطوير الويب",
-      content: "تطوير الويب الحديث يشمل العديد من التقنيات والأدوات المتقدمة مثل React وVue وAngular..."
+      content: "تطوير الويب الحديث يشمل العديد من التقنيات والأدوات المتقدمة مثل React وVue وAngular لتطوير واجهات المستخدم، بالإضافة إلى Node.js وPython لتطوير الخادم. أصبحت مواقع الويب اليوم أكثر تفاعلية وديناميكية من أي وقت مضى، مع استخدام تقنيات مثل Progressive Web Apps وSingle Page Applications."
     }
   ];
 
   return (
     <div className="min-h-screen py-20 px-4">
       <div className="container mx-auto max-w-6xl">
-        {/* العنوان */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
             <span className="text-gradient">تلخيص</span> المقالات
@@ -48,7 +49,6 @@ const ArticleSummary = () => {
           </p>
         </div>
 
-        {/* أداة التلخيص */}
         <Card className="bg-black/40 backdrop-blur-sm border-white/10 mb-6">
           <CardHeader>
             <CardTitle className="text-center font-cairo text-white flex items-center justify-center gap-2">
@@ -56,7 +56,6 @@ const ArticleSummary = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* إعدادات التلخيص */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="flex-1">
                 <label className="block text-sm font-cairo text-white mb-2">طول الملخص</label>
@@ -73,7 +72,6 @@ const ArticleSummary = () => {
               </div>
             </div>
 
-            {/* مناطق النص */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-cairo text-white mb-2">النص أو المقال</label>
@@ -127,7 +125,6 @@ const ArticleSummary = () => {
           </CardContent>
         </Card>
 
-        {/* أمثلة سريعة */}
         <Card className="bg-black/40 backdrop-blur-sm border-white/10">
           <CardHeader>
             <CardTitle className="text-right font-cairo text-white">⚡ أمثلة سريعة</CardTitle>

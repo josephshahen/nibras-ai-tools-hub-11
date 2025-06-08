@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { translateText } from '@/services/aiService';
 
 const Translator = () => {
   const [sourceText, setSourceText] = useState('');
@@ -30,11 +30,14 @@ const Translator = () => {
 
     setIsLoading(true);
     
-    // محاكاة الترجمة
-    setTimeout(() => {
-      setTranslatedText(`هذا مثال على الترجمة: "${sourceText}". في النسخة الكاملة، سيتم استخدام خدمة ترجمة حقيقية لترجمة النص من ${languages.find(l => l.code === sourceLang)?.name} إلى ${languages.find(l => l.code === targetLang)?.name}.`);
+    try {
+      const result = await translateText(sourceText, sourceLang, targetLang);
+      setTranslatedText(result);
+    } catch (error) {
+      setTranslatedText('عذراً، حدث خطأ في الترجمة. يرجى المحاولة مرة أخرى.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const swapLanguages = () => {
@@ -56,7 +59,6 @@ const Translator = () => {
   return (
     <div className="min-h-screen py-20 px-4">
       <div className="container mx-auto max-w-6xl">
-        {/* العنوان */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
             <span className="text-gradient">مترجم</span> فوري
@@ -66,7 +68,6 @@ const Translator = () => {
           </p>
         </div>
 
-        {/* منطقة الترجمة */}
         <Card className="bg-black/40 backdrop-blur-sm border-white/10 mb-6">
           <CardHeader>
             <CardTitle className="text-center font-cairo text-white flex items-center justify-center gap-2">
@@ -74,7 +75,6 @@ const Translator = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* اختيار اللغات */}
             <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
               <div className="flex-1 w-full">
                 <label className="block text-sm font-cairo text-white mb-2">من</label>
@@ -118,7 +118,6 @@ const Translator = () => {
               </div>
             </div>
 
-            {/* مناطق النص */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-cairo text-white mb-2">النص المراد ترجمته</label>
@@ -166,7 +165,6 @@ const Translator = () => {
           </CardContent>
         </Card>
 
-        {/* عبارات سريعة */}
         <Card className="bg-black/40 backdrop-blur-sm border-white/10">
           <CardHeader>
             <CardTitle className="text-right font-cairo text-white">⚡ عبارات سريعة</CardTitle>
