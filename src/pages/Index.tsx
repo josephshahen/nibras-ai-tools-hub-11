@@ -37,8 +37,8 @@ const Index = () => {
       default:
         return (
           <>
-            <HeroSection onNavigate={setActiveSection} />
-            <FeaturesGrid onNavigate={setActiveSection} />
+            <HeroSection />
+            <FeaturesGrid />
           </>
         );
     }
