@@ -1,11 +1,14 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { translateText } from '@/services/aiService';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 const Translator = () => {
+  const { t } = useTranslation();
   const [sourceText, setSourceText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [sourceLang, setSourceLang] = useState('ar');
@@ -13,7 +16,7 @@ const Translator = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const languages = [
-    { code: 'auto', name: 'كشف تلقائي', flag: '🌐' },
+    { code: 'auto', name: t.translator.autoDetect, flag: '🌐' },
     { code: 'ar', name: 'العربية', flag: '🇸🇦' },
     { code: 'en', name: 'English', flag: '🇺🇸' },
     { code: 'fr', name: 'Français', flag: '🇫🇷' },
@@ -85,37 +88,28 @@ const Translator = () => {
     setTranslatedText(sourceText);
   };
 
-  const quickPhrases = [
-    "مرحباً، كيف حالك؟",
-    "شكراً لك",
-    "أين يمكنني أن أجد...؟",
-    "كم السعر؟",
-    "أعتذر، لا أتحدث هذه اللغة",
-    "هل يمكنك مساعدتي؟"
-  ];
-
   return (
     <div className="min-h-screen py-20 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold font-cairo mb-4">
-            <span className="text-gradient">مترجم</span> فوري
+            <span className="text-gradient">{t.translator.title}</span>
           </h1>
           <p className="text-xl text-gray-300 font-cairo">
-            ترجمة فورية بين أكثر من 100 لغة حول العالم
+            {t.translator.subtitle}
           </p>
         </div>
 
         <Card className="bg-black/40 backdrop-blur-sm border-white/10 mb-6">
           <CardHeader>
             <CardTitle className="text-center font-cairo text-white flex items-center justify-center gap-2">
-              🌐 أداة الترجمة
+              🌐 {t.translator.title}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
               <div className="flex-1 w-full">
-                <label className="block text-sm font-cairo text-white mb-2">من</label>
+                <label className="block text-sm font-cairo text-white mb-2">{t.translator.from}</label>
                 <Select value={sourceLang} onValueChange={setSourceLang}>
                   <SelectTrigger className="bg-white/5 border-white/20 font-cairo">
                     <SelectValue />
@@ -140,7 +134,7 @@ const Translator = () => {
               </Button>
 
               <div className="flex-1 w-full">
-                <label className="block text-sm font-cairo text-white mb-2">إلى</label>
+                <label className="block text-sm font-cairo text-white mb-2">{t.translator.to}</label>
                 <Select value={targetLang} onValueChange={setTargetLang}>
                   <SelectTrigger className="bg-white/5 border-white/20 font-cairo">
                     <SelectValue />
@@ -158,20 +152,20 @@ const Translator = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-cairo text-white mb-2">النص المراد ترجمته</label>
+                <label className="block text-sm font-cairo text-white mb-2">{t.translator.sourceText}</label>
                 <Textarea
                   value={sourceText}
                   onChange={(e) => setSourceText(e.target.value)}
-                  placeholder="اكتب النص هنا..."
+                  placeholder={t.translator.placeholder}
                   className="h-40 resize-none font-cairo bg-white/5 border-white/20"
                 />
                 <div className="text-xs text-gray-400 mt-2 font-cairo">
-                  {sourceText.length} حرف
+                  {sourceText.length} {t.translator.characters}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-cairo text-white mb-2">النص المترجم</label>
+                <label className="block text-sm font-cairo text-white mb-2">{t.translator.translatedText}</label>
                 <div className="h-40 p-3 bg-white/5 border border-white/20 rounded-md font-cairo text-white overflow-y-auto">
                   {isLoading ? (
                     <div className="flex items-center justify-center h-full">
@@ -182,12 +176,12 @@ const Translator = () => {
                       </div>
                     </div>
                   ) : (
-                    translatedText || 'الترجمة ستظهر هنا...'
+                    translatedText || t.translator.result
                   )}
                 </div>
                 {translatedText && (
                   <div className="text-xs text-gray-400 mt-2 font-cairo">
-                    {translatedText.length} حرف
+                    {translatedText.length} {t.translator.characters}
                   </div>
                 )}
               </div>
@@ -198,18 +192,18 @@ const Translator = () => {
               disabled={isLoading || !sourceText.trim()}
               className="btn-gradient w-full mt-6"
             >
-              {isLoading ? 'جاري الترجمة...' : 'ترجم النص'}
+              {isLoading ? t.translator.translating : t.translator.translateButton}
             </Button>
           </CardContent>
         </Card>
 
         <Card className="bg-black/40 backdrop-blur-sm border-white/10">
           <CardHeader>
-            <CardTitle className="text-right font-cairo text-white">⚡ عبارات سريعة</CardTitle>
+            <CardTitle className="text-right font-cairo text-white">⚡ {t.translator.quickPhrases}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {quickPhrases.map((phrase, index) => (
+              {t.translator.quickPhrasesList.map((phrase, index) => (
                 <Button
                   key={index}
                   variant="outline"

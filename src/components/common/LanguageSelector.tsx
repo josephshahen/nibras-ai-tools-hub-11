@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Globe } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { SupportedLanguage } from '@/locales';
 
 interface Language {
-  code: string;
+  code: SupportedLanguage;
   name: string;
   flag: string;
   nativeName: string;
@@ -47,14 +48,13 @@ const languages: Language[] = [
 ];
 
 const LanguageSelector = () => {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>(
-    languages.find(lang => lang.code === 'ar') || languages[0]
-  );
+  const { currentLanguage, setLanguage } = useTranslation();
 
-  const handleLanguageChange = (language: Language) => {
-    setCurrentLanguage(language);
-    // Here you would typically update the app's language context
-    console.log(`Language changed to: ${language.name}`);
+  const currentLangData = languages.find(lang => lang.code === currentLanguage) || languages[0];
+
+  const handleLanguageChange = (languageCode: SupportedLanguage) => {
+    setLanguage(languageCode);
+    console.log(`Language changed to: ${languageCode}`);
   };
 
   return (
@@ -65,15 +65,15 @@ const LanguageSelector = () => {
           className="border-white/20 hover:bg-white/10 flex items-center gap-2 font-cairo"
         >
           <Globe size={16} />
-          <span>{currentLanguage.flag}</span>
-          <span className="hidden md:inline">{currentLanguage.nativeName}</span>
+          <span>{currentLangData.flag}</span>
+          <span className="hidden md:inline">{currentLangData.nativeName}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-black/90 border-white/20 max-h-80 overflow-y-auto">
         {languages.map((language) => (
           <DropdownMenuItem
             key={language.code}
-            onClick={() => handleLanguageChange(language)}
+            onClick={() => handleLanguageChange(language.code)}
             className="font-cairo hover:bg-white/10 cursor-pointer flex items-center gap-3"
           >
             <span>{language.flag}</span>
