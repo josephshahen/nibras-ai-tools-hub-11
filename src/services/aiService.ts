@@ -1,4 +1,3 @@
-
 // خدمة الذكاء الاصطناعي المركزية
 const OPENROUTER_API_KEY = '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';
 const REPLICATE_API_KEY = 'r8_crQmT4Z2cEljF7RKmDoiZQJ9jnTltXu0Q0REm';
@@ -76,7 +75,7 @@ export const generateImageWithReplicate = async (prompt: string, style: string =
   }
 };
 
-// خدمة HuggingFace للترجمة والتلخيص
+// خدمة HuggingFace للتلخيص
 export const huggingFaceRequest = async (inputs: any, model: string) => {
   const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
     method: 'POST',
@@ -94,17 +93,52 @@ export const huggingFaceRequest = async (inputs: any, model: string) => {
   return await response.json();
 };
 
-// ترجمة النصوص
+// ترجمة النصوص باستخدام Google Translate المجاني
 export const translateText = async (text: string, sourceLang: string, targetLang: string) => {
   try {
-    const result = await huggingFaceRequest(
-      text,
-      'Helsinki-NLP/opus-mt-ar-en'
-    );
-    return result[0]?.translation_text || result.generated_text || text;
+    // استخدام Google Translate API المجاني
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error('Translation failed');
+    }
+    
+    const data = await response.json();
+    
+    // استخراج النص المترجم من الاستجابة
+    let translatedText = '';
+    if (data && data[0]) {
+      for (let i = 0; i < data[0].length; i++) {
+        if (data[0][i][0]) {
+          translatedText += data[0][i][0];
+        }
+      }
+    }
+    
+    return translatedText || text;
   } catch (error) {
     console.error('Translation error:', error);
-    return `ترجمة: ${text}`;
+    
+    // احتياطي: استخدام الترجمة بواسطة الذكاء الاصطناعي
+    try {
+      const messages = [
+        {
+          role: 'system',
+          content: `أنت مترجم محترف. ترجم النص من ${sourceLang} إلى ${targetLang}. أرجع فقط النص المترجم بدون أي إضافات.`
+        },
+        {
+          role: 'user',
+          content: text
+        }
+      ];
+      
+      return await openRouterRequest(messages);
+    } catch (aiError) {
+      console.error('AI translation error:', aiError);
+      return `خطأ في الترجمة: ${text}`;
+    }
   }
 };
 
