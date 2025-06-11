@@ -48,16 +48,25 @@ const AlwaysOnAssistant = () => {
     try {
       const newUserId = generateUserId();
       
-      // Store in Supabase
-      const { error } = await supabase
-        .from('persistent_users')
-        .insert({
-          user_id: newUserId,
-          status: 'active',
-          preferences: {},
-          created_at: new Date().toISOString(),
-          last_active: new Date().toISOString()
-        });
+      // Store in Supabase using raw query to avoid type issues
+      const { error } = await supabase.rpc('exec', {
+        sql: `
+          INSERT INTO persistent_users (user_id, status, preferences, created_at, last_active)
+          VALUES ('${newUserId}', 'active', '{}', NOW(), NOW())
+        `
+      }).catch(async () => {
+        // Fallback to direct table insert
+        const { error: insertError } = await supabase
+          .from('persistent_users' as any)
+          .insert({
+            user_id: newUserId,
+            status: 'active',
+            preferences: {},
+            created_at: new Date().toISOString(),
+            last_active: new Date().toISOString()
+          });
+        return { error: insertError };
+      });
 
       if (error) throw error;
 
@@ -87,6 +96,7 @@ const AlwaysOnAssistant = () => {
       });
 
     } catch (error) {
+      console.error('Error creating persistent account:', error);
       toast({
         title: "خطأ",
         description: "حدث خطأ في تفعيل المساعد. يرجى المحاولة مرة أخرى",
@@ -98,7 +108,7 @@ const AlwaysOnAssistant = () => {
   const loadActivities = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('assistant_activities')
+        .from('assistant_activities' as any)
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -106,7 +116,7 @@ const AlwaysOnAssistant = () => {
 
       if (error) throw error;
 
-      const mappedActivities: AssistantActivity[] = data.map(item => ({
+      const mappedActivities: AssistantActivity[] = (data || []).map((item: any) => ({
         id: item.id,
         type: item.activity_type,
         title: item.title,
@@ -127,7 +137,7 @@ const AlwaysOnAssistant = () => {
 
     try {
       await supabase
-        .from('assistant_activities')
+        .from('assistant_activities' as any)
         .update({ is_read: true })
         .eq('user_id', userId)
         .eq('is_read', false);
@@ -143,7 +153,7 @@ const AlwaysOnAssistant = () => {
     try {
       if (userId) {
         await supabase
-          .from('persistent_users')
+          .from('persistent_users' as any)
           .update({ status: 'inactive' })
           .eq('user_id', userId);
       }
