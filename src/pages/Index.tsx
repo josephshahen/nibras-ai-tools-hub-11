@@ -12,6 +12,7 @@ import CodeAssistant from '../components/tools/CodeAssistant';
 import ImageGenerator from '../components/tools/ImageGenerator';
 import CVGenerator from '../components/tools/CVGenerator';
 import GamesDownload from '../components/tools/GamesDownload';
+import AlwaysOnAssistant from '../components/common/AlwaysOnAssistant';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState<string>('home');
@@ -19,21 +20,21 @@ const Index = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'chatbot':
-        return <ChatBot onNavigate={setActiveSection} />;
+        return <ChatBot />;
       case 'translator':
-        return <Translator onNavigate={setActiveSection} />;
+        return <Translator />;
       case 'summary':
-        return <ArticleSummary onNavigate={setActiveSection} />;
+        return <ArticleSummary />;
       case 'website':
-        return <WebsiteGenerator onNavigate={setActiveSection} />;
+        return <WebsiteGenerator />;
       case 'code':
-        return <CodeAssistant onNavigate={setActiveSection} />;
+        return <CodeAssistant />;
       case 'images':
-        return <ImageGenerator onNavigate={setActiveSection} />;
+        return <ImageGenerator />;
       case 'cv':
-        return <CVGenerator onNavigate={setActiveSection} />;
+        return <CVGenerator />;
       case 'games':
-        return <GamesDownload onNavigate={setActiveSection} />;
+        return <GamesDownload />;
       default:
         return (
           <>
@@ -51,6 +52,7 @@ const Index = () => {
         {renderActiveSection()}
       </main>
       <Footer />
+      <AlwaysOnAssistant />
     </div>
   );
 };
