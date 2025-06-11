@@ -1,11 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, Bot, Clock, Gift, X, Check, Search, Eye, Activity } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Settings, Bot, Clock, Gift, X, Check, Search, Eye, Activity, Edit3, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,6 +26,7 @@ const AlwaysOnAssistant = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [newActivitiesCount, setNewActivitiesCount] = useState(0);
   const [searchCategory, setSearchCategory] = useState<string>('general');
+  const [customSearch, setCustomSearch] = useState<string>('');
   const [lastActiveTime, setLastActiveTime] = useState<string>('');
   const { toast } = useToast();
 
@@ -36,6 +38,8 @@ const AlwaysOnAssistant = () => {
     { value: 'news', label: 'الأخبار والأحداث' },
     { value: 'entertainment', label: 'الترفيه والألعاب' },
     { value: 'health', label: 'الصحة واللياقة' },
+    { value: 'research', label: 'بحوثاتي السابقة' },
+    { value: 'custom', label: 'شيء آخر (اكتب بنفسك)' },
     { value: 'general', label: 'عام - كل المجالات' }
   ];
 
@@ -50,11 +54,13 @@ const AlwaysOnAssistant = () => {
     const storedUserId = localStorage.getItem('lovableAI_userId');
     const assistantActive = localStorage.getItem('lovableAI_active') === 'true';
     const storedCategory = localStorage.getItem('lovableAI_searchCategory') || 'general';
+    const storedCustomSearch = localStorage.getItem('lovableAI_customSearch') || '';
     
     if (storedUserId && assistantActive) {
       setUserId(storedUserId);
       setIsActive(true);
       setSearchCategory(storedCategory);
+      setCustomSearch(storedCustomSearch);
       loadActivities(storedUserId);
       setLastActiveTime(new Date().toISOString());
     }
@@ -76,13 +82,19 @@ const AlwaysOnAssistant = () => {
     try {
       const newUserId = generateUserId();
       
+      // Prepare preferences with custom search if needed
+      const preferences = { 
+        searchCategory,
+        ...(searchCategory === 'custom' && { customSearch })
+      };
+      
       // Store in Supabase
       const { error } = await supabase
         .from('persistent_users')
         .insert({
           user_id: newUserId,
           status: 'active',
-          preferences: { searchCategory },
+          preferences,
           created_at: new Date().toISOString(),
           last_active: new Date().toISOString()
         });
@@ -93,6 +105,9 @@ const AlwaysOnAssistant = () => {
       localStorage.setItem('lovableAI_userId', newUserId);
       localStorage.setItem('lovableAI_active', 'true');
       localStorage.setItem('lovableAI_searchCategory', searchCategory);
+      if (searchCategory === 'custom') {
+        localStorage.setItem('lovableAI_customSearch', customSearch);
+      }
       
       setUserId(newUserId);
       setIsActive(true);
@@ -101,11 +116,13 @@ const AlwaysOnAssistant = () => {
 
       // Create welcome activity
       const selectedCategory = searchCategories.find(cat => cat.value === searchCategory);
+      const searchText = searchCategory === 'custom' ? customSearch : selectedCategory?.label;
+      
       const welcomeActivity: AssistantActivity = {
         id: '1',
         type: 'suggestion',
         title: '🎉 مرحباً! مساعدك الذكي جاهز للعمل',
-        description: `بدأت في تتبع المحتوى الجديد في مجال "${selectedCategory?.label}" - سأقوم بالبحث لك كل 6 ساعات حتى عند مغادرة الموقع`,
+        description: `بدأت في تتبع المحتوى الجديد في "${searchText}" - سأقوم بالبحث لك كل 6 ساعات حتى عند مغادرة الموقع`,
         timestamp: new Date().toISOString(),
         isNew: true
       };
@@ -114,7 +131,7 @@ const AlwaysOnAssistant = () => {
 
       toast({
         title: "🚀 تم تفعيل المساعد الدائم!",
-        description: `سيبحث لك في "${selectedCategory?.label}" حتى عند الخروج من الموقع`,
+        description: `سيبحث لك في "${searchText}" حتى عند الخروج من الموقع`,
       });
 
     } catch (error) {
@@ -177,10 +194,15 @@ const AlwaysOnAssistant = () => {
     if (!userId) return;
 
     try {
+      const preferences = { 
+        searchCategory: newCategory,
+        ...(newCategory === 'custom' && { customSearch })
+      };
+
       const { error } = await supabase
         .from('persistent_users')
         .update({ 
-          preferences: { searchCategory: newCategory },
+          preferences,
           last_active: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -189,11 +211,16 @@ const AlwaysOnAssistant = () => {
 
       setSearchCategory(newCategory);
       localStorage.setItem('lovableAI_searchCategory', newCategory);
+      if (newCategory === 'custom') {
+        localStorage.setItem('lovableAI_customSearch', customSearch);
+      }
 
       const selectedCategory = searchCategories.find(cat => cat.value === newCategory);
+      const searchText = newCategory === 'custom' ? customSearch : selectedCategory?.label;
+      
       toast({
         title: "✅ تم تحديث التفضيلات",
-        description: `سأبحث لك الآن في "${selectedCategory?.label}"`,
+        description: `سأبحث لك الآن في "${searchText}"`,
       });
     } catch (error) {
       console.error('Error updating search category:', error);
@@ -214,11 +241,13 @@ const AlwaysOnAssistant = () => {
       localStorage.removeItem('lovableAI_userId');
       localStorage.removeItem('lovableAI_active');
       localStorage.removeItem('lovableAI_searchCategory');
+      localStorage.removeItem('lovableAI_customSearch');
       
       setIsActive(false);
       setUserId(null);
       setActivities([]);
       setNewActivitiesCount(0);
+      setCustomSearch('');
 
       toast({
         title: "⏹️ تم إيقاف المساعد",
@@ -257,6 +286,13 @@ const AlwaysOnAssistant = () => {
     if (diffMinutes < 2) return '🟢 يعمل الآن';
     if (diffMinutes < 60) return `🟡 آخر نشاط منذ ${diffMinutes} دقيقة`;
     return '🔴 غير نشط حالياً';
+  };
+
+  const getCurrentSearchText = () => {
+    if (searchCategory === 'custom') return customSearch || 'لم تحدد بحث مخصص';
+    if (searchCategory === 'research') return 'بحوثاتي السابقة';
+    const category = searchCategories.find(cat => cat.value === searchCategory);
+    return category?.label || searchCategory;
   };
 
   return (
@@ -329,11 +365,43 @@ const AlwaysOnAssistant = () => {
                       <SelectContent className="bg-black border-white/20">
                         {searchCategories.map((category) => (
                           <SelectItem key={category.value} value={category.value} className="text-right font-cairo">
+                            {category.value === 'custom' && <Edit3 size={14} className="inline ml-2" />}
+                            {category.value === 'research' && <History size={14} className="inline ml-2" />}
                             {category.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+
+                    {/* Custom Search Input */}
+                    {searchCategory === 'custom' && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-cairo text-white">اكتب ما تريد البحث عنه:</Label>
+                        <Textarea
+                          value={customSearch}
+                          onChange={(e) => setCustomSearch(e.target.value)}
+                          placeholder="مثال: أحدث التطورات في الذكاء الاصطناعي، أفضل الكتب في مجال..."
+                          className="bg-black/40 border-white/20 text-white font-cairo resize-none"
+                          rows={3}
+                        />
+                        <p className="text-xs text-gray-400 font-cairo">
+                          💡 كن محدداً قدر الإمكان للحصول على نتائج أفضل
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Research History Option */}
+                    {searchCategory === 'research' && (
+                      <div className="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <History className="text-blue-400" size={16} />
+                          <span className="text-sm font-cairo text-blue-400 font-semibold">بحوثاتي السابقة</span>
+                        </div>
+                        <p className="text-xs text-gray-300 font-cairo">
+                          سيقوم المساعد بتتبع وتطوير البحوث والمواضيع التي تفاعلت معها سابقاً في الموقع
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -364,8 +432,40 @@ const AlwaysOnAssistant = () => {
                   </CardContent>
                 </Card>
 
+                {/* How to verify it's working */}
+                <Card className="bg-gradient-to-r from-orange-600/20 to-red-600/20 border-orange-400/30">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-cairo text-right flex items-center gap-2">
+                      <Activity className="text-orange-400" size={20} />
+                      🔍 كيف تتأكد من عمل المساعد؟
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-gray-300 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Check size={16} className="text-orange-400 flex-shrink-0" />
+                      <span className="font-cairo">مؤشر الحالة أسفل الأيقونة (🟢 يعمل الآن / 🟡 آخر نشاط / 🔴 غير نشط)</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Check size={16} className="text-orange-400 flex-shrink-0" />
+                      <span className="font-cairo">النشاطات الجديدة تظهر مع نقطة زرقاء وعداد أحمر</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Check size={16} className="text-orange-400 flex-shrink-0" />
+                      <span className="font-cairo">رسالة الترحيب تظهر فوراً بعد التفعيل</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Check size={16} className="text-orange-400 flex-shrink-0" />
+                      <span className="font-cairo">حتى بعد إغلاق المتصفح، ستجد نشاطات جديدة عند العودة</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <div className="flex gap-3">
-                  <Button onClick={createPersistentAccount} className="btn-gradient flex-1 font-cairo text-lg py-3">
+                  <Button 
+                    onClick={createPersistentAccount} 
+                    className="btn-gradient flex-1 font-cairo text-lg py-3"
+                    disabled={searchCategory === 'custom' && !customSearch.trim()}
+                  >
                     🚀 نعم، أريد المساعد الدائم
                   </Button>
                   <Button variant="outline" onClick={() => setShowDialog(false)} className="font-cairo border-white/20 hover:bg-white/10">
@@ -393,7 +493,7 @@ const AlwaysOnAssistant = () => {
                       {getActivityStatusText()}
                     </Badge>
                     <div className="text-sm text-gray-300 font-cairo">
-                      البحث في: {searchCategories.find(cat => cat.value === searchCategory)?.label}
+                      البحث في: {getCurrentSearchText()}
                     </div>
                   </div>
                 </div>
@@ -406,7 +506,7 @@ const AlwaysOnAssistant = () => {
                       تغيير مجال البحث
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-3">
                     <Select value={searchCategory} onValueChange={updateSearchCategory}>
                       <SelectTrigger className="w-full bg-black/40 border-white/20 text-right font-cairo">
                         <SelectValue />
@@ -414,11 +514,26 @@ const AlwaysOnAssistant = () => {
                       <SelectContent className="bg-black border-white/20">
                         {searchCategories.map((category) => (
                           <SelectItem key={category.value} value={category.value} className="text-right font-cairo">
+                            {category.value === 'custom' && <Edit3 size={14} className="inline ml-2" />}
+                            {category.value === 'research' && <History size={14} className="inline ml-2" />}
                             {category.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+
+                    {searchCategory === 'custom' && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-cairo text-white">اكتب ما تريد البحث عنه:</Label>
+                        <Textarea
+                          value={customSearch}
+                          onChange={(e) => setCustomSearch(e.target.value)}
+                          placeholder="مثال: أحدث التطورات في الذكاء الاصطناعي..."
+                          className="bg-black/40 border-white/20 text-white font-cairo resize-none"
+                          rows={2}
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
