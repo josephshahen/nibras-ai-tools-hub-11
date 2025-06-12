@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Settings, Bot, Clock, Gift, X, Check, Search, Eye, Activity, Edit3, History } from 'lucide-react';
+import { Settings, Bot, Clock, Gift, X, Check, Search, Eye, Activity, Edit3, History, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -45,7 +46,7 @@ const AlwaysOnAssistant = () => {
 
   useEffect(() => {
     checkExistingAccount();
-    // Check activity every 30 seconds to show real-time updates
+    // Check for new activities every 30 seconds
     const interval = setInterval(checkAssistantActivity, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -66,11 +67,20 @@ const AlwaysOnAssistant = () => {
     }
   };
 
-  const checkAssistantActivity = () => {
+  const checkAssistantActivity = async () => {
     if (isActive && userId) {
       setLastActiveTime(new Date().toISOString());
-      // Simulate checking for new activities
-      loadActivities(userId);
+      await loadActivities(userId);
+      
+      // Update last_active in database
+      try {
+        await supabase
+          .from('persistent_users')
+          .update({ last_active: new Date().toISOString() })
+          .eq('user_id', userId);
+      } catch (error) {
+        console.error('Error updating last_active:', error);
+      }
     }
   };
 
@@ -82,7 +92,7 @@ const AlwaysOnAssistant = () => {
     try {
       const newUserId = generateUserId();
       
-      // Prepare preferences with custom search if needed
+      // Prepare preferences
       const preferences = { 
         searchCategory,
         ...(searchCategory === 'custom' && { customSearch })
@@ -121,8 +131,8 @@ const AlwaysOnAssistant = () => {
       const welcomeActivity: AssistantActivity = {
         id: '1',
         type: 'suggestion',
-        title: '🎉 مرحباً! مساعدك الذكي جاهز للعمل',
-        description: `بدأت في تتبع المحتوى الجديد في "${searchText}" - سأقوم بالبحث لك كل 6 ساعات حتى عند مغادرة الموقع`,
+        title: '🎉 تم تفعيل المساعد الذكي الدائم بنجاح!',
+        description: `سيبحث لك المساعد عن كل جديد في "${searchText}" كل 6 ساعات، حتى عند مغادرة الموقع. ستجد النتائج هنا عند عودتك.`,
         timestamp: new Date().toISOString(),
         isNew: true
       };
@@ -130,14 +140,14 @@ const AlwaysOnAssistant = () => {
       setActivities([welcomeActivity]);
 
       toast({
-        title: "🚀 تم تفعيل المساعد الدائم!",
-        description: `سيبحث لك في "${searchText}" حتى عند الخروج من الموقع`,
+        title: "🚀 تم تفعيل المساعد الذكي الدائم!",
+        description: `سيبحث لك في "${searchText}" حتى عند مغادرة الموقع`,
       });
 
     } catch (error) {
       console.error('Error creating persistent account:', error);
       toast({
-        title: "❌ خطأ",
+        title: "❌ خطأ في التفعيل",
         description: "حدث خطأ في تفعيل المساعد. يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
@@ -297,7 +307,7 @@ const AlwaysOnAssistant = () => {
 
   return (
     <>
-      {/* Enhanced Floating Status Icon */}
+      {/* Floating Assistant Button */}
       <div className="fixed bottom-6 left-6 z-50">
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogTrigger asChild>
@@ -339,7 +349,7 @@ const AlwaysOnAssistant = () => {
               </DialogTitle>
               {!isActive && (
                 <DialogDescription className="text-right font-cairo text-gray-300 text-lg">
-                  مساعد ذكي يعمل لك حتى عند مغادرة الموقع ويبحث عن كل جديد في المجال الذي تختاره
+                  وفر وقتك! هذا المساعد سيبحث لك تلقائيًا عن كل ما تحتاجه حتى عند مغادرة الموقع.
                 </DialogDescription>
               )}
             </DialogHeader>
@@ -351,7 +361,7 @@ const AlwaysOnAssistant = () => {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-cairo text-right flex items-center gap-2">
                       <Search className="text-purple-400" size={20} />
-                      ماذا نبحث لك أثناء غيابك؟
+                      🔍 ماذا نبحث لك أثناء غيابك؟
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -405,6 +415,7 @@ const AlwaysOnAssistant = () => {
                   </CardContent>
                 </Card>
 
+                {/* Features */}
                 <Card className="bg-gradient-to-r from-blue-600/20 to-green-600/20 border-blue-400/30">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-cairo text-right flex items-center gap-2">
@@ -415,24 +426,24 @@ const AlwaysOnAssistant = () => {
                   <CardContent className="text-sm text-gray-300 space-y-3">
                     <div className="flex items-center gap-3">
                       <Check size={16} className="text-green-400 flex-shrink-0" />
-                      <span className="font-cairo">يحفظ تفضيلاتك ويبقى نشطاً حتى عند إغلاق المتصفح</span>
+                      <span className="font-cairo">🔍 يحفظ اهتماماتك بشكل <strong>آمن ومجهول</strong></span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Check size={16} className="text-green-400 flex-shrink-0" />
-                      <span className="font-cairo">يبحث تلقائياً كل 6 ساعات عن المحتوى الجديد في مجالك</span>
+                      <span className="font-cairo">🔄 يقدم لك تحديثات عند عودتك</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Check size={16} className="text-green-400 flex-shrink-0" />
-                      <span className="font-cairo">يعمل كحساب مؤقت آمن بدون تسجيل</span>
+                      <span className="font-cairo">🚫 يمكنك إيقافه في أي وقت</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Check size={16} className="text-green-400 flex-shrink-0" />
-                      <span className="font-cairo">إشعارات فورية عند العثور على محتوى مهم</span>
+                      <span className="font-cairo">⚡ إشعارات فورية عند العثور على محتوى مهم</span>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* How to verify it's working */}
+                {/* How to verify it works */}
                 <Card className="bg-gradient-to-r from-orange-600/20 to-red-600/20 border-orange-400/30">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-cairo text-right flex items-center gap-2">
@@ -443,30 +454,55 @@ const AlwaysOnAssistant = () => {
                   <CardContent className="text-sm text-gray-300 space-y-3">
                     <div className="flex items-center gap-3">
                       <Check size={16} className="text-orange-400 flex-shrink-0" />
-                      <span className="font-cairo">مؤشر الحالة أسفل الأيقونة (🟢 يعمل الآن / 🟡 آخر نشاط / 🔴 غير نشط)</span>
+                      <span className="font-cairo">🟢 مؤشر الحالة أسفل الأيقونة (يعمل الآن / غير نشط)</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Check size={16} className="text-orange-400 flex-shrink-0" />
-                      <span className="font-cairo">النشاطات الجديدة تظهر مع نقطة زرقاء وعداد أحمر</span>
+                      <span className="font-cairo">🔴 النشاطات الجديدة تظهر مع نقطة زرقاء وعداد أحمر</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Check size={16} className="text-orange-400 flex-shrink-0" />
-                      <span className="font-cairo">رسالة الترحيب تظهر فوراً بعد التفعيل</span>
+                      <span className="font-cairo">🎉 رسالة الترحيب تظهر فوراً بعد التفعيل</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Check size={16} className="text-orange-400 flex-shrink-0" />
-                      <span className="font-cairo">حتى بعد إغلاق المتصفح، ستجد نشاطات جديدة عند العودة</span>
+                      <span className="font-cairo">💻 حتى بعد إغلاق المتصفح، ستجد نشاطات جديدة عند العودة</span>
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* Privacy */}
+                <Card className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 border-green-400/30">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-cairo text-right flex items-center gap-2">
+                      <Shield className="text-green-400" size={20} />
+                      🔒 كيف نحمي خصوصيتك؟
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-gray-300 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Check size={16} className="text-green-400 flex-shrink-0" />
+                      <span className="font-cairo">معرف مجهول بدون أي معلومات شخصية</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Check size={16} className="text-green-400 flex-shrink-0" />
+                      <span className="font-cairo">يتم حذف البيانات تلقائياً بعد 30 يوم من عدم النشاط</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Check size={16} className="text-green-400 flex-shrink-0" />
+                      <span className="font-cairo">لا نجمع أي معلومات تعريفية أو بيانات حساسة</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Action Buttons */}
                 <div className="flex gap-3">
                   <Button 
                     onClick={createPersistentAccount} 
                     className="btn-gradient flex-1 font-cairo text-lg py-3"
                     disabled={searchCategory === 'custom' && !customSearch.trim()}
                   >
-                    🚀 نعم، أريد المساعد الدائم
+                    🎯 تفعيل المساعد
                   </Button>
                   <Button variant="outline" onClick={() => setShowDialog(false)} className="font-cairo border-white/20 hover:bg-white/10">
                     لاحقاً
