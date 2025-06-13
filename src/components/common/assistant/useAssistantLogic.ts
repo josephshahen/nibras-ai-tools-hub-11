@@ -14,6 +14,7 @@ export const useAssistantLogic = () => {
   const [searchCategory, setSearchCategory] = useState<string>('general');
   const [customSearch, setCustomSearch] = useState<string>('');
   const [lastActiveTime, setLastActiveTime] = useState<string>('');
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export const useAssistantLogic = () => {
       setSearchCategory(storedCategory);
       setCustomSearch(storedCustomSearch);
       loadActivities(storedUserId);
+      loadRecommendations(storedUserId);
       setLastActiveTime(new Date().toISOString());
     }
   };
@@ -42,6 +44,7 @@ export const useAssistantLogic = () => {
     if (isActive && userId) {
       setLastActiveTime(new Date().toISOString());
       await loadActivities(userId);
+      await loadRecommendations(userId);
       
       try {
         await supabase
@@ -78,6 +81,33 @@ export const useAssistantLogic = () => {
       setNewActivitiesCount(mappedActivities.filter(a => a.isNew).length);
     } catch (error) {
       console.error('Error loading activities:', error);
+    }
+  };
+
+  const loadRecommendations = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('recommendations')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      setRecommendations(data || []);
+      
+      // Show notification if there are new recommendations
+      if (data && data.length > 0) {
+        toast({
+          title: `🔎 المساعد وجد ${data.length} توصية جديدة!`,
+          description: "تم العثور على أدوات ومحتوى جديد قد يهمك",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading recommendations:', error);
     }
   };
 
@@ -120,7 +150,7 @@ export const useAssistantLogic = () => {
         id: '1',
         type: 'suggestion',
         title: '🎉 تم تفعيل المساعد الذكي الدائم بنجاح!',
-        description: `سيبحث لك المساعد عن كل جديد في "${searchText}" كل 6 ساعات، حتى عند مغادرة الموقع. ستجد النتائج هنا عند عودتك.`,
+        description: `سيبحث لك المساعد عن كل جديد في "${searchText}" باستمرار ولن يتوقف أبداً. ستجد التوصيات هنا عند عودتك.`,
         timestamp: new Date().toISOString(),
         isNew: true
       };
@@ -129,7 +159,7 @@ export const useAssistantLogic = () => {
 
       toast({
         title: "🚀 تم تفعيل المساعد الذكي الدائم!",
-        description: `سيبحث لك في "${searchText}" حتى عند مغادرة الموقع`,
+        description: `سيعمل إلى الأبد ولن يتوقف عن البحث في "${searchText}"`,
       });
 
     } catch (error) {
@@ -158,6 +188,24 @@ export const useAssistantLogic = () => {
       setNewActivitiesCount(0);
     } catch (error) {
       console.error('Error marking activities as read:', error);
+    }
+  };
+
+  const markRecommendationsAsRead = async () => {
+    if (!userId) return;
+
+    try {
+      const { error } = await supabase
+        .from('recommendations')
+        .update({ is_read: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      setRecommendations([]);
+    } catch (error) {
+      console.error('Error marking recommendations as read:', error);
     }
   };
 
@@ -190,7 +238,7 @@ export const useAssistantLogic = () => {
       
       toast({
         title: "✅ تم تحديث التفضيلات",
-        description: `سأبحث لك الآن في "${searchText}"`,
+        description: `سأبحث لك الآن في "${searchText}" إلى الأبد`,
       });
     } catch (error) {
       console.error('Error updating search category:', error);
@@ -208,20 +256,16 @@ export const useAssistantLogic = () => {
         if (error) throw error;
       }
 
-      localStorage.removeItem('lovableAI_userId');
-      localStorage.removeItem('lovableAI_active');
-      localStorage.removeItem('lovableAI_searchCategory');
-      localStorage.removeItem('lovableAI_customSearch');
+      localStorage.setItem('lovableAI_active', 'false');
       
       setIsActive(false);
-      setUserId(null);
       setActivities([]);
       setNewActivitiesCount(0);
-      setCustomSearch('');
+      setRecommendations([]);
 
       toast({
-        title: "⏹️ تم إيقاف المساعد",
-        description: "يمكنك إعادة تفعيله في أي وقت",
+        title: "⏸️ تم إيقاف المساعد مؤقتاً",
+        description: "البيانات محفوظة للأبد. يمكنك إعادة تفعيله في أي وقت",
       });
     } catch (error) {
       toast({
@@ -240,10 +284,12 @@ export const useAssistantLogic = () => {
     searchCategory,
     customSearch,
     lastActiveTime,
+    recommendations,
     setSearchCategory,
     setCustomSearch,
     createPersistentAccount,
     markActivitiesAsRead,
+    markRecommendationsAsRead,
     updateSearchCategory,
     deactivateAssistant
   };
