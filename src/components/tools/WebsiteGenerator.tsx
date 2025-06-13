@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Home } from 'lucide-react';
-import { generateWebsiteWithBuilderIO } from '@/services/aiService';
+import { generateWebsiteWithOpenAI } from '@/services/openaiService';
 import FloatingAIAssistant from '@/components/common/FloatingAIAssistant';
 
 interface WebsiteGeneratorProps {
@@ -55,7 +56,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
     setIsLoading(true);
     try {
       console.log(`🌐 إنشاء موقع ${type} باسم: ${title}`);
-      const website = await generateWebsiteWithBuilderIO(title, description, type, color);
+      const website = await generateWebsiteWithOpenAI(title, description, type, color);
       setGeneratedWebsite(website);
       console.log('✅ تم إنشاء الموقع بنجاح');
     } catch (error) {
@@ -93,8 +94,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
     setIsLoading(true);
     try {
       console.log('✏️ تعديل الموقع...');
-      const fullPrompt = `عدّل الموقع التالي:\n\nالكود الحالي:\n${generatedWebsite}\n\nالتعديل المطلوب: ${editPrompt}\n\nأنشئ موقع محدث مع التعديلات`;
-      const editedWebsite = await generateWebsiteWithBuilderIO(title, `${description} - ${editPrompt}`, type, color);
+      const editedWebsite = await generateWebsiteWithOpenAI(title, description, type, color, editPrompt);
       setGeneratedWebsite(editedWebsite);
       setEditMode(false);
       setEditPrompt('');
@@ -317,7 +317,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                         {websiteTypes.find(t => t.value === type)?.label}
                       </span>
                       <span className="px-2 py-1 bg-green-500/20 rounded text-green-400">
-                        Builder.io
+                        OpenAI GPT-4.1
                       </span>
                     </>
                   )}
@@ -339,7 +339,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                       <p className="text-sm text-gray-400 font-cairo mb-2">
                         {editMode ? '✏️ جاري تعديل الموقع...' : '🌐 جاري إنشاء الموقع...'}
                       </p>
-                      <p className="text-xs text-gray-500 font-cairo">يتم استخدام Builder.io للحصول على أفضل النتائج</p>
+                      <p className="text-xs text-gray-500 font-cairo">باستخدام OpenAI GPT-4.1</p>
                     </div>
                   </div>
                 ) : generatedWebsite ? (
@@ -366,7 +366,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                     <div><strong>الاسم:</strong> {title}</div>
                     <div><strong>النوع:</strong> {websiteTypes.find(t => t.value === type)?.label}</div>
                     <div><strong>اللون:</strong> {colors.find(c => c.value === color)?.label}</div>
-                    <div><strong>المولد:</strong> Builder.io API مع تحسينات ذكية</div>
+                    <div><strong>المولد:</strong> OpenAI GPT-4.1 مع تحسينات ذكية</div>
                   </div>
                 </div>
               )}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Home } from 'lucide-react';
-import { generateImageWithDeepAI } from '@/services/aiService';
+import { generateImageWithOpenAI } from '@/services/openaiService';
 import FloatingAIAssistant from '@/components/common/FloatingAIAssistant';
 
 interface ImageGeneratorProps {
@@ -52,11 +52,9 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
     setGeneratedImages([]);
     
     try {
-      console.log('🎨 بدء توليد الصورة بـ DeepAI...');
+      console.log('🎨 بدء توليد الصورة بـ OpenAI...');
       
-      const enhancedPrompt = enhancePrompt(prompt);
-      const imageUrl = await generateImageWithDeepAI(enhancedPrompt, style);
-
+      const imageUrl = await generateImageWithOpenAI(prompt, style);
       setGeneratedImages([imageUrl]);
       setCurrentImageIndex(0);
       console.log('✅ تم توليد الصورة بنجاح');
@@ -79,8 +77,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       console.log('✏️ بدء تعديل الصورة...');
       
       const combinedPrompt = `${prompt}, ${editPrompt}`;
-      const enhancedPrompt = enhancePrompt(combinedPrompt);
-      const editedImageUrl = await generateImageWithDeepAI(enhancedPrompt, style);
+      const editedImageUrl = await generateImageWithOpenAI(combinedPrompt, style);
 
       const updatedImages = [...generatedImages];
       updatedImages[currentImageIndex] = editedImageUrl;
@@ -147,7 +144,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
             <span className="text-gradient">مولد الصور</span> المتطور
           </h1>
           <p className="text-xl text-gray-300 font-cairo">
-            أنشئ وعدّل صوراً مذهلة بتقنية الذكاء الاصطناعي - بدعم DeepAI
+            أنشئ وعدّل صوراً مذهلة بتقنية الذكاء الاصطناعي - بدعم OpenAI
           </p>
         </div>
 
@@ -255,8 +252,15 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
 
           <Card className="bg-black/40 backdrop-blur-sm border-white/10">
             <CardHeader>
-              <CardTitle className="text-right font-cairo text-white">
-                🖼️ الصورة المولدة
+              <CardTitle className="text-right font-cairo text-white flex items-center justify-between">
+                <div className="flex gap-2 text-sm">
+                  {generatedImages.length > 0 && (
+                    <span className="px-2 py-1 bg-green-500/20 rounded text-green-400">
+                      OpenAI GPT-Image-1
+                    </span>
+                  )}
+                </div>
+                <span>🖼️ الصورة المولدة</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -270,7 +274,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                     <p className="text-sm text-gray-400 font-cairo mb-2">
                       {editMode ? '✏️ جاري تعديل الصورة...' : '🎨 جاري إنشاء الصورة...'}
                     </p>
-                    <p className="text-xs text-gray-500 font-cairo">قد يستغرق 15-30 ثانية</p>
+                    <p className="text-xs text-gray-500 font-cairo">باستخدام OpenAI GPT-Image-1</p>
                   </div>
                 ) : generatedImages.length > 0 ? (
                   <img 
@@ -291,7 +295,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                   <div className="text-xs text-gray-400 font-cairo space-y-1">
                     <div><strong>الوصف:</strong> {prompt}</div>
                     <div><strong>النمط:</strong> {artStyles.find(s => s.value === style)?.label}</div>
-                    <div><strong>المولد:</strong> DeepAI API</div>
+                    <div><strong>المولد:</strong> OpenAI GPT-Image-1</div>
                   </div>
                 </div>
               )}
