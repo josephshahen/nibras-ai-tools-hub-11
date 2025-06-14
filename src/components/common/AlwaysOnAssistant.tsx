@@ -47,26 +47,13 @@ const AlwaysOnAssistant = () => {
     setShowDialog(false);
   };
 
-  const getSearchTimeInfo = () => {
-    if (!lastActiveTime) return 'مرحباً بك في زيارتك الدائمة للموقع';
-    
-    const now = new Date();
-    const lastActive = new Date(lastActiveTime);
-    const diffInMinutes = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes <= 5) return 'بحث سريع (5 دقائق)';
-    if (diffInMinutes <= 60) return 'بحث دقيق (ساعة)';
-    if (diffInMinutes <= 1440) return 'بحث شامل (يوم)';
-    return 'بحث متخصص (أسبوع)';
-  };
-
   const getWelcomeMessage = () => {
     if (userId && !isActive) {
       return (
         <div className="text-center p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg border border-blue-400/30 mb-4">
           <h3 className="text-lg font-cairo text-blue-300 mb-2">🏠 أهلاً بك في حسابك الدائم!</h3>
           <p className="text-gray-300 font-cairo text-sm">
-            حسابك محفوظ للأبد في الموقع. يمكنك تفعيل المساعد الذكي في أي وقت للحصول على بحث مستمر.
+            يمكنك تفعيل المساعد الذكي في أي وقت للحصول على بحث مستمر.
           </p>
         </div>
       );
@@ -95,30 +82,11 @@ const AlwaysOnAssistant = () => {
             </DialogTitle>
             {!isActive && !userId && (
               <DialogDescription className="text-right font-cairo text-gray-300 text-lg">
-                سيبحث لك تلقائياً ويحفظ حسابك للأبد في الموقع:
-                <ul className="mt-3 space-y-2 text-blue-200">
-                  <li className="flex items-center gap-2">
-                    <span className="text-green-400">🔍</span>
-                    نتائج فورية خلال 5 دقائق - بحث سريع
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-green-400">🎯</span>
-                    نتائج دقيقة خلال ساعة - بحث متقدم
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-green-400">📚</span>
-                    نتائج شاملة خلال يوم - بحث عميق
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-green-400">⭐</span>
-                    نتائج متخصصة خلال أسبوع - بحث خبير
-                  </li>
-                </ul>
+                سيبحث لك تلقائياً ويحفظ حسابك في الموقع
               </DialogDescription>
             )}
           </DialogHeader>
 
-          {/* رسالة ترحيب للحسابات الموجودة */}
           {getWelcomeMessage()}
 
           {!isActive ? (
@@ -143,56 +111,6 @@ const AlwaysOnAssistant = () => {
               </Card>
 
               <FeatureCards />
-
-              {/* Search Timing Info */}
-              <Card className="bg-gradient-to-r from-green-600/20 to-blue-600/20 border-green-400/30">
-                <CardContent className="pt-4">
-                  <div className="text-center text-sm text-green-200 space-y-2">
-                    <div className="flex items-center justify-center gap-2 mb-3">
-                      <Timer className="text-green-400" size={16} />
-                      <span className="font-cairo font-semibold">توقيتات البحث الذكي</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="bg-blue-500/20 p-2 rounded border border-blue-400/30">
-                        <div className="font-semibold">5 دقائق</div>
-                        <div>بحث سريع</div>
-                      </div>
-                      <div className="bg-green-500/20 p-2 rounded border border-green-400/30">
-                        <div className="font-semibold">60 دقيقة</div>
-                        <div>بحث دقيق</div>
-                      </div>
-                      <div className="bg-purple-500/20 p-2 rounded border border-purple-400/30">
-                        <div className="font-semibold">24 ساعة</div>
-                        <div>بحث شامل</div>
-                      </div>
-                      <div className="bg-yellow-500/20 p-2 rounded border border-yellow-400/30">
-                        <div className="font-semibold">أسبوع</div>
-                        <div>بحث متخصص</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Privacy and Terms */}
-              <Card className="bg-black/40 border-white/10">
-                <CardContent className="pt-4">
-                  <div className="text-center text-sm text-gray-400 space-y-2">
-                    <p>♾️ حسابك وبياناتك محفوظة للأبد في الموقع</p>
-                    <p>🔒 نحترم خصوصيتك - البيانات مجهولة ومشفرة</p>
-                    <p>🏠 زيارة دائمة للموقع لكل من يستخدم هذه الميزة</p>
-                    <div className="flex justify-center gap-4">
-                      <a 
-                        href="/privacy" 
-                        className="text-blue-400 hover:text-blue-300 flex items-center gap-1 font-cairo"
-                      >
-                        <ExternalLink size={14} />
-                        سياسة الخصوصية
-                      </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Action Buttons */}
               <div className="flex gap-3">
@@ -231,9 +149,6 @@ const AlwaysOnAssistant = () => {
                   </Badge>
                   <div className="text-sm text-gray-300 font-cairo">
                     البحث في: {getCurrentSearchText(searchCategory, customSearch, searchCategories)}
-                  </div>
-                  <div className="text-xs text-blue-400 font-cairo">
-                    {getSearchTimeInfo()}
                   </div>
                   <div className="text-xs text-green-400 font-cairo">
                     🏠 حساب دائم محفوظ للأبد

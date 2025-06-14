@@ -13,6 +13,7 @@ import ImageGenerator from '../components/tools/ImageGenerator';
 import CVGenerator from '../components/tools/CVGenerator';
 import GamesDownload from '../components/tools/GamesDownload';
 import AlwaysOnAssistant from '../components/common/AlwaysOnAssistant';
+import SearchResultsWelcome from '../components/common/SearchResultsWelcome';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState<string>('home');
@@ -53,6 +54,7 @@ const Index = () => {
       </main>
       <Footer />
       <AlwaysOnAssistant />
+      <SearchResultsWelcome />
     </div>
   );
 };
