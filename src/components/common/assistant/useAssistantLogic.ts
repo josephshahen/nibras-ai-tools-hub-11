@@ -19,10 +19,10 @@ export const useAssistantLogic = () => {
 
   useEffect(() => {
     checkExistingAccount();
-    const interval = setInterval(checkAssistantActivity, 30000);
-    return () => clearInterval(interval);
+    // إزالة الفحص الدوري - المستخدم يزور متى يريد
   }, []);
 
+  // فحص الحساب الموجود والتأكد من إنشاء زيارة دائمة
   const checkExistingAccount = async () => {
     try {
       const storedUserId = localStorage.getItem('lovableAI_userId');
@@ -32,8 +32,8 @@ export const useAssistantLogic = () => {
       
       console.log('🔍 فحص الحساب الموجود...', { storedUserId, assistantActive });
       
-      if (storedUserId && assistantActive) {
-        // التحقق من وجود المستخدم في قاعدة البيانات
+      if (storedUserId) {
+        // التحقق من وجود المستخدم في قاعدة البيانات وإنشاء زيارة دائمة
         const { data: userExists, error } = await supabase
           .from('persistent_users')
           .select('*')
@@ -52,47 +52,36 @@ export const useAssistantLogic = () => {
           const preferences = userExists.preferences as UserPreferences | null;
           
           setUserId(storedUserId);
-          setIsActive(true);
+          setIsActive(assistantActive); // يعتمد على التفضيلات المحفوظة
           setSearchCategory(preferences?.searchCategory || storedCategory);
           setCustomSearch(preferences?.customSearch || storedCustomSearch);
           setLastActiveTime(userExists.last_active || new Date().toISOString());
           
-          await loadActivities(storedUserId);
-          await loadRecommendations(storedUserId);
+          // تحميل البيانات حسب حالة التفعيل
+          if (assistantActive) {
+            await loadActivities(storedUserId);
+            await loadRecommendations(storedUserId);
+          } else {
+            await loadActivities(storedUserId); // تحميل الأنشطة السابقة فقط
+          }
           
           console.log('✅ تم تحميل حساب موجود بنجاح');
           
-          // تحديث آخر نشاط
+          // تحديث آخر زيارة دائماً (زيارة دائمة للموقع)
           await supabase
             .from('persistent_users')
             .update({ last_active: new Date().toISOString() })
             .eq('user_id', storedUserId);
+            
+          console.log('🏠 تم تسجيل زيارة دائمة للموقع');
         } else {
           console.log('⚠️ المستخدم غير موجود في قاعدة البيانات، إعادة إنشاء...');
-          localStorage.removeItem('lovableAI_userId');
-          localStorage.removeItem('lovableAI_active');
+          // إنشاء حساب دائم حتى لو لم يكن موجود
+          await createPermanentAccount(storedUserId, storedCategory, storedCustomSearch, false);
         }
       }
     } catch (error) {
       console.error('❌ خطأ في فحص الحساب الموجود:', error);
-    }
-  };
-
-  const checkAssistantActivity = async () => {
-    if (isActive && userId) {
-      console.log('🔄 فحص نشاط المساعد للمستخدم:', userId);
-      setLastActiveTime(new Date().toISOString());
-      await loadActivities(userId);
-      await loadRecommendations(userId);
-      
-      try {
-        await supabase
-          .from('persistent_users')
-          .update({ last_active: new Date().toISOString() })
-          .eq('user_id', userId);
-      } catch (error) {
-        console.error('❌ خطأ في تحديث آخر نشاط:', error);
-      }
     }
   };
 
@@ -152,8 +141,8 @@ export const useAssistantLogic = () => {
       console.log('🎯 تم تحميل التوصيات:', data?.length || 0);
       setRecommendations(data || []);
       
-      // إظهار إشعار إذا كان هناك توصيات جديدة
-      if (data && data.length > 0) {
+      // إظهار إشعار إذا كان هناك توصيات جديدة (فقط إذا كان المساعد نشط)
+      if (data && data.length > 0 && isActive) {
         toast({
           title: `🔎 المساعد وجد ${data.length} توصية جديدة!`,
           description: "تم العثور على أدوات ومحتوى جديد قد يهمك",
@@ -165,23 +154,26 @@ export const useAssistantLogic = () => {
     }
   };
 
-  const createPersistentAccount = async () => {
+  // إنشاء حساب دائم في الموقع
+  const createPermanentAccount = async (existingUserId?: string, category?: string, customSearchText?: string, activate: boolean = true) => {
     try {
-      const newUserId = generateUserId();
+      const newUserId = existingUserId || generateUserId();
+      const finalCategory = category || searchCategory;
+      const finalCustomSearch = customSearchText || customSearch;
       
-      console.log('🆕 إنشاء حساب دائم جديد:', newUserId);
+      console.log('🆕 إنشاء حساب دائم في الموقع:', newUserId);
       
       const preferences = { 
-        searchCategory,
-        ...(searchCategory === 'custom' && { customSearch })
+        searchCategory: finalCategory,
+        ...(finalCategory === 'custom' && { customSearch: finalCustomSearch })
       } as UserPreferences;
       
       const { data, error } = await supabase
         .from('persistent_users')
         .insert({
           user_id: newUserId,
-          status: 'active',
-          preferences: preferences as any, // Cast to any for Json compatibility
+          status: activate ? 'active' : 'inactive', // يعتمد على رغبة المستخدم
+          preferences: preferences as any,
           created_at: new Date().toISOString(),
           last_active: new Date().toISOString()
         })
@@ -193,28 +185,30 @@ export const useAssistantLogic = () => {
         throw error;
       }
 
-      console.log('✅ تم إنشاء المستخدم بنجاح:', data);
+      console.log('✅ تم إنشاء حساب دائم بنجاح:', data);
 
       // حفظ في localStorage
       localStorage.setItem('lovableAI_userId', newUserId);
-      localStorage.setItem('lovableAI_active', 'true');
-      localStorage.setItem('lovableAI_searchCategory', searchCategory);
-      if (searchCategory === 'custom') {
-        localStorage.setItem('lovableAI_customSearch', customSearch);
+      localStorage.setItem('lovableAI_active', activate.toString());
+      localStorage.setItem('lovableAI_searchCategory', finalCategory);
+      if (finalCategory === 'custom') {
+        localStorage.setItem('lovableAI_customSearch', finalCustomSearch);
       }
       
       setUserId(newUserId);
-      setIsActive(true);
+      setIsActive(activate);
       setLastActiveTime(new Date().toISOString());
 
       // إنشاء نشاط ترحيبي
-      const selectedCategory = searchCategories.find(cat => cat.value === searchCategory);
-      const searchText = searchCategory === 'custom' ? customSearch : selectedCategory?.label;
+      const selectedCategory = searchCategories.find(cat => cat.value === finalCategory);
+      const searchText = finalCategory === 'custom' ? finalCustomSearch : selectedCategory?.label;
       
       const welcomeActivity = {
         activity_type: 'suggestion',
-        title: '🎉 تم تفعيل المساعد الذكي الدائم بنجاح!',
-        description: `سيبحث لك المساعد عن كل جديد في "${searchText}" باستمرار ولن يتوقف أبداً. ستجد التوصيات هنا عند عودتك.`,
+        title: activate ? '🎉 تم تفعيل المساعد الذكي الدائم بنجاح!' : '🏠 تم إنشاء حساب دائم في الموقع!',
+        description: activate 
+          ? `سيبحث لك المساعد عن كل جديد في "${searchText}" باستمرار ولن يتوقف أبداً. ستجد التوصيات هنا عند عودتك.`
+          : `تم إنشاء حسابك الدائم في الموقع. يمكنك تفعيل المساعد في أي وقت للبحث في "${searchText}".`,
         user_id: newUserId
       };
 
@@ -228,22 +222,85 @@ export const useAssistantLogic = () => {
         console.log('✅ تم إنشاء نشاط الترحيب');
       }
 
-      // تحميل الأنشطة والتوصيات
+      // تحميل الأنشطة
       await loadActivities(newUserId);
-      await loadRecommendations(newUserId);
+      if (activate) {
+        await loadRecommendations(newUserId);
+      }
 
       toast({
-        title: "🚀 تم تفعيل المساعد الذكي الدائم!",
-        description: `سيعمل إلى الأبد ولن يتوقف عن البحث في "${searchText}"`,
+        title: activate ? "🚀 تم تفعيل المساعد الذكي الدائم!" : "🏠 تم إنشاء حسابك الدائم!",
+        description: activate 
+          ? `سيعمل إلى الأبد ولن يتوقف عن البحث في "${searchText}"`
+          : `حسابك محفوظ للأبد. يمكنك تفعيل المساعد في أي وقت`,
       });
 
     } catch (error) {
       console.error('❌ خطأ في إنشاء الحساب الدائم:', error);
       toast({
         title: "❌ خطأ في التفعيل",
-        description: "حدث خطأ في تفعيل المساعد. يرجى المحاولة مرة أخرى",
+        description: "حدث خطأ في إنشاء الحساب. يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
+    }
+  };
+
+  // تفعيل المساعد للحساب الموجود
+  const createPersistentAccount = async () => {
+    if (userId) {
+      // تحديث الحساب الموجود لتفعيل المساعد
+      await updateAccountStatus(true);
+    } else {
+      // إنشاء حساب جديد مع تفعيل المساعد
+      await createPermanentAccount(undefined, undefined, undefined, true);
+    }
+  };
+
+  // تحديث حالة الحساب
+  const updateAccountStatus = async (activate: boolean) => {
+    if (!userId) return;
+
+    try {
+      const preferences = { 
+        searchCategory,
+        ...(searchCategory === 'custom' && { customSearch })
+      } as UserPreferences;
+
+      const { error } = await supabase
+        .from('persistent_users')
+        .update({ 
+          status: activate ? 'active' : 'inactive',
+          preferences: preferences as any,
+          last_active: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      localStorage.setItem('lovableAI_active', activate.toString());
+      localStorage.setItem('lovableAI_searchCategory', searchCategory);
+      if (searchCategory === 'custom') {
+        localStorage.setItem('lovableAI_customSearch', customSearch);
+      }
+      
+      setIsActive(activate);
+
+      if (activate) {
+        await loadRecommendations(userId);
+        const searchText = getCurrentSearchText(searchCategory, customSearch, searchCategories);
+        toast({
+          title: "✅ تم تفعيل المساعد",
+          description: `سأبحث لك الآن في "${searchText}" إلى الأبد`,
+        });
+      } else {
+        setRecommendations([]);
+        toast({
+          title: "⏸️ تم إيقاف المساعد مؤقتاً",
+          description: "حسابك محفوظ للأبد. يمكنك إعادة تفعيله في أي وقت",
+        });
+      }
+    } catch (error) {
+      console.error('❌ خطأ في تحديث حالة الحساب:', error);
     }
   };
 
@@ -296,7 +353,7 @@ export const useAssistantLogic = () => {
       const { error } = await supabase
         .from('persistent_users')
         .update({ 
-          preferences: preferences as any, // Cast to any for Json compatibility
+          preferences: preferences as any,
           last_active: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -321,34 +378,8 @@ export const useAssistantLogic = () => {
   };
 
   const deactivateAssistant = async () => {
-    try {
-      if (userId) {
-        const { error } = await supabase
-          .from('persistent_users')
-          .update({ status: 'inactive' })
-          .eq('user_id', userId);
-
-        if (error) throw error;
-      }
-
-      localStorage.setItem('lovableAI_active', 'false');
-      
-      setIsActive(false);
-      setActivities([]);
-      setNewActivitiesCount(0);
-      setRecommendations([]);
-
-      toast({
-        title: "⏸️ تم إيقاف المساعد مؤقتاً",
-        description: "البيانات محفوظة للأبد. يمكنك إعادة تفعيله في أي وقت",
-      });
-    } catch (error) {
-      toast({
-        title: "❌ خطأ",
-        description: "حدث خطأ في إيقاف المساعد",
-        variant: "destructive"
-      });
-    }
+    // إيقاف المساعد مع الحفاظ على الحساب
+    await updateAccountStatus(false);
   };
 
   return {

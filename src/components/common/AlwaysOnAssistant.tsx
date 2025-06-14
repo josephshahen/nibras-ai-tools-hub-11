@@ -19,6 +19,7 @@ const AlwaysOnAssistant = () => {
   const [showDialog, setShowDialog] = useState(false);
   const {
     isActive,
+    userId,
     activities,
     newActivitiesCount,
     searchCategory,
@@ -47,7 +48,7 @@ const AlwaysOnAssistant = () => {
   };
 
   const getSearchTimeInfo = () => {
-    if (!lastActiveTime) return 'سيبدأ البحث قريباً';
+    if (!lastActiveTime) return 'مرحباً بك في زيارتك الدائمة للموقع';
     
     const now = new Date();
     const lastActive = new Date(lastActiveTime);
@@ -57,6 +58,20 @@ const AlwaysOnAssistant = () => {
     if (diffInMinutes <= 60) return 'بحث دقيق (ساعة)';
     if (diffInMinutes <= 1440) return 'بحث شامل (يوم)';
     return 'بحث متخصص (أسبوع)';
+  };
+
+  const getWelcomeMessage = () => {
+    if (userId && !isActive) {
+      return (
+        <div className="text-center p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg border border-blue-400/30 mb-4">
+          <h3 className="text-lg font-cairo text-blue-300 mb-2">🏠 أهلاً بك في حسابك الدائم!</h3>
+          <p className="text-gray-300 font-cairo text-sm">
+            حسابك محفوظ للأبد في الموقع. يمكنك تفعيل المساعد الذكي في أي وقت للحصول على بحث مستمر.
+          </p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -78,9 +93,9 @@ const AlwaysOnAssistant = () => {
               🤖 المساعد الذكي الدائم
               <Infinity className="text-green-400" size={20} />
             </DialogTitle>
-            {!isActive && (
+            {!isActive && !userId && (
               <DialogDescription className="text-right font-cairo text-gray-300 text-lg">
-                سيبحث لك تلقائياً عن:
+                سيبحث لك تلقائياً ويحفظ حسابك للأبد في الموقع:
                 <ul className="mt-3 space-y-2 text-blue-200">
                   <li className="flex items-center gap-2">
                     <span className="text-green-400">🔍</span>
@@ -102,6 +117,9 @@ const AlwaysOnAssistant = () => {
               </DialogDescription>
             )}
           </DialogHeader>
+
+          {/* رسالة ترحيب للحسابات الموجودة */}
+          {getWelcomeMessage()}
 
           {!isActive ? (
             <div className="space-y-6">
@@ -160,8 +178,9 @@ const AlwaysOnAssistant = () => {
               <Card className="bg-black/40 border-white/10">
                 <CardContent className="pt-4">
                   <div className="text-center text-sm text-gray-400 space-y-2">
-                    <p>♾️ بياناتك ونتائج البحث محفوظة للأبد</p>
+                    <p>♾️ حسابك وبياناتك محفوظة للأبد في الموقع</p>
                     <p>🔒 نحترم خصوصيتك - البيانات مجهولة ومشفرة</p>
+                    <p>🏠 زيارة دائمة للموقع لكل من يستخدم هذه الميزة</p>
                     <div className="flex justify-center gap-4">
                       <a 
                         href="/privacy" 
@@ -182,7 +201,7 @@ const AlwaysOnAssistant = () => {
                   className="btn-gradient flex-1 font-cairo text-lg py-3"
                   disabled={searchCategory === 'custom' && !customSearch.trim()}
                 >
-                  ♾️ تفعيل البحث الذكي الدائم
+                  {userId ? '🚀 تفعيل المساعد الذكي' : '♾️ إنشاء حساب دائم + تفعيل المساعد'}
                 </Button>
                 <Button variant="outline" onClick={() => setShowDialog(false)} className="font-cairo border-white/20 hover:bg-white/10">
                   لاحقاً
@@ -215,6 +234,9 @@ const AlwaysOnAssistant = () => {
                   </div>
                   <div className="text-xs text-blue-400 font-cairo">
                     {getSearchTimeInfo()}
+                  </div>
+                  <div className="text-xs text-green-400 font-cairo">
+                    🏠 حساب دائم محفوظ للأبد
                   </div>
                 </div>
               </div>
