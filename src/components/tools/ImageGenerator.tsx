@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,20 +31,11 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
   ];
 
   const promptExamples = [
-    "قطة بيضاء جميلة تجلس في حديقة مليئة بالورود الملونة، إضاءة ذهبية، جودة عالية، 8K",
-    "منظر طبيعي خلاب لجبال مغطاة بالثلوج عند غروب الشمس، ألوان دافئة، تفاصيل مذهلة",
-    "رائد فضاء يستكشف كوكباً غريباً مليئاً بالنباتات الفضائية المضيئة، خيال علمي متطور",
-    "قلعة من القرون الوسطى على قمة جبل في ضوء القمر، أجواء غامضة ورومانسية"
+    "قطة بيضاء جميلة تجلس في حديقة مليئة بالورود الملونة",
+    "منظر طبيعي خلاب لجبال مغطاة بالثلوج عند غروب الشمس",
+    "رائد فضاء يستكشف كوكباً غريباً مليئاً بالنباتات الفضائية المضيئة",
+    "قلعة من القرون الوسطى على قمة جبل في ضوء القمر"
   ];
-
-  const enhancePrompt = (originalPrompt: string) => {
-    const enhancementWords = [
-      "عالي الجودة", "8K resolution", "masterpiece", "detailed", "professional",
-      "beautiful lighting", "perfect composition", "award winning"
-    ];
-    
-    return `${originalPrompt}, ${enhancementWords.join(', ')}`;
-  };
 
   const generateImage = async () => {
     if (!prompt.trim()) return;
@@ -52,7 +44,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
     setGeneratedImages([]);
     
     try {
-      console.log('🎨 بدء توليد الصورة بـ OpenAI...');
+      console.log('🎨 بدء توليد الصورة بـ DALL-E 3...');
       
       const imageUrl = await generateImageWithOpenAI(prompt, style);
       setGeneratedImages([imageUrl]);
@@ -60,9 +52,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       console.log('✅ تم توليد الصورة بنجاح');
     } catch (error) {
       console.error('❌ خطأ في توليد الصورة:', error);
-      const fallbackImage = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=512&h=512&fit=crop';
-      setGeneratedImages([fallbackImage]);
-      setCurrentImageIndex(0);
+      alert('حدث خطأ في توليد الصورة. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +78,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       console.log('✅ تم تعديل الصورة بنجاح');
     } catch (error) {
       console.error('❌ خطأ في تعديل الصورة:', error);
+      alert('حدث خطأ في تعديل الصورة. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +104,6 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
   };
 
   const handleAIApply = (suggestion: string) => {
-    // تطبيق اقتراحات المساعد الذكي
     if (suggestion.includes('تعديل') || suggestion.includes('عدل')) {
       setEditPrompt(suggestion);
       setEditMode(true);
@@ -144,7 +134,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
             <span className="text-gradient">مولد الصور</span> المتطور
           </h1>
           <p className="text-xl text-gray-300 font-cairo">
-            أنشئ وعدّل صوراً مذهلة بتقنية الذكاء الاصطناعي - بدعم OpenAI
+            أنشئ وعدّل صوراً مذهلة بتقنية DALL-E 3 من OpenAI
           </p>
         </div>
 
@@ -205,9 +195,6 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                       placeholder="اكتب التعديلات المطلوبة: أضف، غيّر، احذف..."
                       className="h-32 resize-none font-cairo bg-white/5 border-white/20 text-right"
                     />
-                    <div className="text-xs text-gray-400 mt-2 font-cairo">
-                      مثال: "أضف قطة صغيرة"، "غيّر اللون إلى أزرق"، "احذف الخلفية"
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -256,7 +243,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                 <div className="flex gap-2 text-sm">
                   {generatedImages.length > 0 && (
                     <span className="px-2 py-1 bg-green-500/20 rounded text-green-400">
-                      OpenAI GPT-Image-1
+                      DALL-E 3
                     </span>
                   )}
                 </div>
@@ -274,7 +261,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                     <p className="text-sm text-gray-400 font-cairo mb-2">
                       {editMode ? '✏️ جاري تعديل الصورة...' : '🎨 جاري إنشاء الصورة...'}
                     </p>
-                    <p className="text-xs text-gray-500 font-cairo">باستخدام OpenAI GPT-Image-1</p>
+                    <p className="text-xs text-gray-500 font-cairo">باستخدام DALL-E 3</p>
                   </div>
                 ) : generatedImages.length > 0 ? (
                   <img 
@@ -295,7 +282,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                   <div className="text-xs text-gray-400 font-cairo space-y-1">
                     <div><strong>الوصف:</strong> {prompt}</div>
                     <div><strong>النمط:</strong> {artStyles.find(s => s.value === style)?.label}</div>
-                    <div><strong>المولد:</strong> OpenAI GPT-Image-1</div>
+                    <div><strong>المولد:</strong> DALL-E 3 من OpenAI</div>
                   </div>
                 </div>
               )}

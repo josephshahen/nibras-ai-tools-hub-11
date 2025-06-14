@@ -44,10 +44,10 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
   ];
 
   const websiteExamples = [
-    { title: 'شركة التقنية المبدعة', description: 'نقدم حلول تقنية مبتكرة للشركات والمؤسسات', type: 'business' },
-    { title: 'مصمم جرافيك محترف', description: 'معرض أعمالي في التصميم والإبداع البصري', type: 'portfolio' },
-    { title: 'مدونة التقنية', description: 'آخر أخبار التكنولوجيا والبرمجة', type: 'blog' },
-    { title: 'تطبيق الصحة الذكي', description: 'تطبيق يساعدك على متابعة صحتك يومياً', type: 'landing' }
+    { title: 'شركة التقنية المبدعة', description: 'نقدم حلول تقنية مبتكرة للشركات والمؤسسات مع فريق محترف من المطورين والمصممين', type: 'business' },
+    { title: 'مصمم جرافيك محترف', description: 'معرض أعمالي في التصميم والإبداع البصري مع أكثر من 5 سنوات خبرة', type: 'portfolio' },
+    { title: 'مدونة التقنية', description: 'آخر أخبار التكنولوجيا والبرمجة والذكاء الاصطناعي', type: 'blog' },
+    { title: 'تطبيق الصحة الذكي', description: 'تطبيق ثوري يساعدك على متابعة صحتك يومياً بذكاء اصطناعي', type: 'landing' }
   ];
 
   const generateWebsite = async () => {
@@ -61,28 +61,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
       console.log('✅ تم إنشاء الموقع بنجاح');
     } catch (error) {
       console.error('❌ خطأ في إنشاء الموقع:', error);
-      setGeneratedWebsite(`<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; }
-        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-        h1 { font-size: 3rem; margin-bottom: 20px; }
-        p { font-size: 1.2rem; line-height: 1.6; }
-        .cta { background: rgba(255,255,255,0.2); padding: 15px 30px; border: none; border-radius: 25px; color: white; font-size: 1rem; margin-top: 30px; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>${title}</h1>
-        <p>${description}</p>
-        <button class="cta">ابدأ الآن</button>
-    </div>
-</body>
-</html>`);
+      alert('حدث خطأ في إنشاء الموقع. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);
     }
@@ -101,6 +80,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
       console.log('✅ تم تعديل الموقع بنجاح');
     } catch (error) {
       console.error('❌ خطأ في تعديل الموقع:', error);
+      alert('حدث خطأ في تعديل الموقع. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +139,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
             <span className="text-gradient">مولد المواقع</span> الاحترافي
           </h1>
           <p className="text-xl text-gray-300 font-cairo">
-            أنشئ وعدّل مواقع ويب احترافية بتقنية Builder.io المتطورة
+            أنشئ وعدّل مواقع ويب احترافية بتقنية GPT-4 من OpenAI
           </p>
         </div>
 
@@ -252,9 +232,6 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                       placeholder="اكتب التعديلات المطلوبة: أضف قسم، غيّر التصميم، عدّل المحتوى..."
                       className="h-32 resize-none font-cairo bg-white/5 border-white/20 text-right"
                     />
-                    <div className="text-xs text-gray-400 mt-2 font-cairo">
-                      مثال: "أضف قسم اتصل بنا"، "غيّر الألوان لتكون أكثر دفئاً"، "أضف معرض صور"
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -317,7 +294,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                         {websiteTypes.find(t => t.value === type)?.label}
                       </span>
                       <span className="px-2 py-1 bg-green-500/20 rounded text-green-400">
-                        OpenAI GPT-4.1
+                        GPT-4
                       </span>
                     </>
                   )}
@@ -339,7 +316,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                       <p className="text-sm text-gray-400 font-cairo mb-2">
                         {editMode ? '✏️ جاري تعديل الموقع...' : '🌐 جاري إنشاء الموقع...'}
                       </p>
-                      <p className="text-xs text-gray-500 font-cairo">باستخدام OpenAI GPT-4.1</p>
+                      <p className="text-xs text-gray-500 font-cairo">باستخدام GPT-4</p>
                     </div>
                   </div>
                 ) : generatedWebsite ? (
@@ -366,7 +343,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                     <div><strong>الاسم:</strong> {title}</div>
                     <div><strong>النوع:</strong> {websiteTypes.find(t => t.value === type)?.label}</div>
                     <div><strong>اللون:</strong> {colors.find(c => c.value === color)?.label}</div>
-                    <div><strong>المولد:</strong> OpenAI GPT-4.1 مع تحسينات ذكية</div>
+                    <div><strong>المولد:</strong> GPT-4 من OpenAI</div>
                   </div>
                 </div>
               )}

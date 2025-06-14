@@ -20,7 +20,7 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log('🎨 توليد صورة بـ OpenAI:', prompt);
+    console.log('🎨 توليد صورة بـ DALL-E 3:', prompt);
 
     // تحسين الوصف حسب النمط
     let enhancedPrompt = prompt;
@@ -45,11 +45,12 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-image-1',
+        model: 'dall-e-3',
         prompt: enhancedPrompt,
         n: 1,
         size: '1024x1024',
-        quality: 'high'
+        quality: 'hd',
+        style: style === 'realistic' ? 'natural' : 'vivid'
       }),
     });
 
@@ -60,9 +61,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    // gpt-image-1 يرجع base64 مباشرة
-    const imageBase64 = data.data[0].b64_json;
-    const imageUrl = `data:image/png;base64,${imageBase64}`;
+    const imageUrl = data.data[0].url;
 
     console.log('✅ تم توليد الصورة بنجاح');
 
