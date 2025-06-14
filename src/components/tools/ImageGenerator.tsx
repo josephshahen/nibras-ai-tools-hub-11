@@ -48,9 +48,9 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
     setLastError('');
     
     try {
-      console.log('🎨 Starting image generation...');
-      console.log('📝 Prompt:', prompt);
-      console.log('🎭 Style:', style);
+      console.log('🎨 بدء توليد الصورة...');
+      console.log('📝 الوصف:', prompt);
+      console.log('🎭 النمط:', style);
       
       const imageUrl = await generateImageWithOpenAI(prompt, style);
       
@@ -61,21 +61,23 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       setCurrentImageIndex(0);
       
       toast.success('تم توليد الصورة بنجاح! 🎨');
-      console.log('✅ Image generated successfully');
+      console.log('✅ تم توليد الصورة بنجاح');
     } catch (error) {
-      console.error('❌ Error generating image:', error);
+      console.error('❌ خطأ في توليد الصورة:', error);
       const errorMessage = error.message || 'خطأ غير معروف في توليد الصورة';
       setLastError(errorMessage);
       
-      // رسائل خطأ محسنة
+      // رسائل خطأ محسنة ومفصلة
       if (errorMessage.includes('مفتاح') || errorMessage.includes('API')) {
-        toast.error('مشكلة في مفتاح OpenAI API - تحقق من الإعدادات');
+        toast.error('❌ مشكلة في مفتاح OpenAI API - تحقق من الإعدادات في Supabase');
       } else if (errorMessage.includes('حصة') || errorMessage.includes('رصيد')) {
-        toast.error('انتهت حصة OpenAI - تحقق من رصيدك');
+        toast.error('💳 انتهت حصة OpenAI - تحقق من رصيدك');
       } else if (errorMessage.includes('سياسة')) {
-        toast.error('المحتوى ينتهك سياسة OpenAI - عدّل الوصف');
+        toast.error('⚠️ المحتوى ينتهك سياسة OpenAI - عدّل الوصف');
+      } else if (errorMessage.includes('اتصال') || errorMessage.includes('خادم')) {
+        toast.error('🌐 مشكلة في الاتصال - تحقق من الإنترنت وحاول مرة أخرى');
       } else {
-        toast.error(`فشل في توليد الصورة: ${errorMessage}`);
+        toast.error(`❌ خطأ: ${errorMessage}`);
       }
     } finally {
       setIsLoading(false);
@@ -92,7 +94,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
     setLastError('');
     
     try {
-      console.log('✏️ Starting image editing...');
+      console.log('✏️ بدء تعديل الصورة...');
       
       const combinedPrompt = `${prompt}, ${editPrompt}`;
       const editedImageUrl = await generateImageWithOpenAI(combinedPrompt, style);
@@ -109,7 +111,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       toast.success('تم تعديل الصورة بنجاح! ✨');
       console.log('✅ Image edited successfully');
     } catch (error) {
-      console.error('❌ Error editing image:', error);
+      console.error('❌ خطأ في تعديل الصورة:', error);
       const errorMessage = error.message || 'خطأ في تعديل الصورة';
       setLastError(errorMessage);
       toast.error(`فشل في تعديل الصورة: ${errorMessage}`);
@@ -227,19 +229,24 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                   </Button>
 
                   {lastError && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                       <div className="flex items-start gap-2 text-red-400 text-sm font-cairo">
                         <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
                         <div>
-                          <div className="font-semibold mb-1">خطأ في توليد الصورة:</div>
-                          <div>{lastError}</div>
+                          <div className="font-semibold mb-1">❌ خطأ في توليد الصورة:</div>
+                          <div className="mb-2">{lastError}</div>
+                          {lastError.includes('مفتاح') && (
+                            <div className="text-xs text-gray-300 mt-2 p-2 bg-red-500/5 rounded">
+                              💡 تلميح: تأكد من إضافة مفتاح OpenAI API في إعدادات Supabase Edge Function Secrets
+                            </div>
+                          )}
                         </div>
                       </div>
                       <Button 
                         onClick={retryGeneration}
                         variant="outline"
                         size="sm"
-                        className="mt-2 border-red-500/20 hover:bg-red-500/10 text-red-400"
+                        className="mt-3 border-red-500/20 hover:bg-red-500/10 text-red-400"
                       >
                         <RefreshCw size={14} className="ml-1" />
                         حاول مرة أخرى
@@ -377,15 +384,8 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       </div>
 
       <FloatingAIAssistant 
-        context={`مولد الصور - الوصف الحالي: ${prompt} - النمط: ${style} - ${generatedImages.length > 0 ? 'تم إنشاء صورة' : 'لم يتم إنشاء صورة بعد'}`}
-        onApply={(suggestion: string) => {
-          if (suggestion.includes('تعديل') || suggestion.includes('عدل')) {
-            setEditPrompt(suggestion);
-            setEditMode(true);
-          } else {
-            setPrompt(suggestion);
-          }
-        }}
+        context={getCurrentContext()}
+        onApply={handleAIApply}
       />
     </div>
   );

@@ -1,25 +1,35 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const generateImageWithOpenAI = async (prompt: string, style: string): Promise<string> => {
   try {
-    console.log('🎨 Starting image generation process...');
-    console.log('📝 Original prompt:', prompt);
-    console.log('🎭 Selected style:', style);
+    console.log('🎨 بدء عملية توليد الصورة...');
+    console.log('📝 الوصف الأصلي:', prompt);
+    console.log('🎭 النمط المختار:', style);
     
     if (!prompt || prompt.trim().length === 0) {
       throw new Error('يرجى إدخال وصف للصورة');
     }
 
+    console.log('📡 إرسال طلب إلى Edge Function...');
+    
     const { data, error } = await supabase.functions.invoke('generate-image-openai', {
       body: { prompt: prompt.trim(), style }
     });
 
-    console.log('📡 Edge Function response:', data);
-    console.log('❌ Edge Function error:', error);
+    console.log('📦 رد Edge Function:', data);
+    console.log('❌ خطأ Edge Function:', error);
 
     if (error) {
-      console.error('❌ Supabase Edge Function error:', error);
-      throw new Error(`خطأ في الاتصال بالخادم: ${error.message}`);
+      console.error('❌ خطأ في Supabase Edge Function:', error);
+      
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('خطأ في الاتصال بالخادم - تحقق من الإنترنت');
+      } else if (error.message.includes('FunctionsHttpError')) {
+        throw new Error('خطأ في خادم الوظائف - حاول مرة أخرى');
+      } else {
+        throw new Error(`خطأ في الاتصال: ${error.message}`);
+      }
     }
 
     if (!data) {
@@ -27,7 +37,7 @@ export const generateImageWithOpenAI = async (prompt: string, style: string): Pr
     }
 
     if (!data.success) {
-      console.error('❌ OpenAI generation failed:', data);
+      console.error('❌ فشل في توليد الصورة:', data);
       const errorMsg = data.error || 'فشل في توليد الصورة';
       const details = data.details ? ` - ${data.details}` : '';
       throw new Error(`${errorMsg}${details}`);
@@ -37,12 +47,12 @@ export const generateImageWithOpenAI = async (prompt: string, style: string): Pr
       throw new Error('لم يتم إرجاع رابط الصورة من الخادم');
     }
 
-    console.log('✅ Image generation completed successfully');
-    console.log('🔗 Generated image URL exists:', !!data.imageUrl);
+    console.log('✅ تم توليد الصورة بنجاح');
+    console.log('🔗 رابط الصورة موجود:', !!data.imageUrl);
     
     return data.imageUrl;
   } catch (error) {
-    console.error('❌ Error in generateImageWithOpenAI:', error);
+    console.error('❌ خطأ في generateImageWithOpenAI:', error);
     
     // تحسين رسائل الخطأ
     if (error.message.includes('insufficient_quota')) {
