@@ -55,13 +55,17 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
 
     setIsLoading(true);
     try {
-      console.log(`🌐 إنشاء موقع ${type} باسم: ${title}`);
+      console.log(`🌐 إنشاء موقع جديد: ${title}`);
+      console.log(`📋 النوع: ${type}, اللون: ${color}`);
+      console.log(`📝 الوصف: ${description}`);
+      
       const website = await generateWebsiteWithOpenAI(title, description, type, color);
       setGeneratedWebsite(website);
-      console.log('✅ تم إنشاء الموقع بنجاح');
+      
+      console.log('✅ تم إنشاء الموقع بنجاح، طول الكود:', website.length);
     } catch (error) {
       console.error('❌ خطأ في إنشاء الموقع:', error);
-      alert('حدث خطأ في إنشاء الموقع. يرجى المحاولة مرة أخرى.');
+      alert(`حدث خطأ في إنشاء الموقع: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +76,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
 
     setIsLoading(true);
     try {
-      console.log('✏️ تعديل الموقع...');
+      console.log('✏️ تعديل الموقع:', editPrompt);
       const editedWebsite = await generateWebsiteWithOpenAI(title, description, type, color, editPrompt);
       setGeneratedWebsite(editedWebsite);
       setEditMode(false);
@@ -80,14 +84,14 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
       console.log('✅ تم تعديل الموقع بنجاح');
     } catch (error) {
       console.error('❌ خطأ في تعديل الموقع:', error);
-      alert('حدث خطأ في تعديل الموقع. يرجى المحاولة مرة أخرى.');
+      alert(`حدث خطأ في تعديل الموقع: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const downloadWebsite = () => {
-    const blob = new Blob([generatedWebsite], { type: 'text/html' });
+    const blob = new Blob([generatedWebsite], { type: 'text/html;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -99,7 +103,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
   };
 
   const previewWebsite = () => {
-    const newWindow = window.open();
+    const newWindow = window.open('', '_blank', 'width=1200,height=800');
     if (newWindow) {
       newWindow.document.write(generatedWebsite);
       newWindow.document.close();
@@ -219,7 +223,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                     disabled={isLoading || !title.trim() || !description.trim()}
                     className="btn-gradient w-full py-3"
                   >
-                    {isLoading ? '🌐 جاري الإنشاء...' : '✨ أنشئ الموقع'}
+                    {isLoading ? '🌐 جاري الإنشاء...' : '✨ أنشئ موقع جديد'}
                   </Button>
                 </>
               ) : (
@@ -325,13 +329,14 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                     className="w-full h-full border-0"
                     title="Website Preview"
                     sandbox="allow-scripts allow-same-origin"
+                    key={generatedWebsite.length + Date.now()}
                   />
                 ) : (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center">
                       <div className="text-6xl mb-4">🌐</div>
                       <p className="text-gray-400 font-cairo">معاينة الموقع ستظهر هنا</p>
-                      <p className="text-xs text-gray-500 font-cairo mt-2">املأ البيانات واضغط "أنشئ الموقع"</p>
+                      <p className="text-xs text-gray-500 font-cairo mt-2">املأ البيانات واضغط "أنشئ موقع جديد"</p>
                     </div>
                   </div>
                 )}
@@ -344,6 +349,7 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
                     <div><strong>النوع:</strong> {websiteTypes.find(t => t.value === type)?.label}</div>
                     <div><strong>اللون:</strong> {colors.find(c => c.value === color)?.label}</div>
                     <div><strong>المولد:</strong> GPT-4 من OpenAI</div>
+                    <div><strong>الوقت:</strong> {new Date().toLocaleString('ar-SA')}</div>
                   </div>
                 </div>
               )}
@@ -378,8 +384,17 @@ const WebsiteGenerator = ({ onNavigate }: WebsiteGeneratorProps) => {
       </div>
 
       <FloatingAIAssistant 
-        context={getCurrentContext()}
-        onApply={handleAIApply}
+        context={`مولد المواقع - الاسم: ${title} - الوصف: ${description} - النوع: ${type} - ${generatedWebsite ? 'تم إنشاء موقع' : 'لم يتم إنشاء موقع بعد'}`}
+        onApply={(suggestion: string) => {
+          if (suggestion.includes('تعديل') || suggestion.includes('عدل')) {
+            setEditPrompt(suggestion);
+            setEditMode(true);
+          } else if (suggestion.includes('اسم') || suggestion.includes('عنوان')) {
+            setTitle(suggestion);
+          } else if (suggestion.includes('وصف') || suggestion.includes('محتوى')) {
+            setDescription(suggestion);
+          }
+        }}
       />
     </div>
   );

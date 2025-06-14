@@ -17,27 +17,33 @@ serve(async (req) => {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
     if (!openAIApiKey) {
+      console.error('❌ OpenAI API key not found');
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log('🎨 توليد صورة بـ DALL-E 3:', prompt);
+    console.log('🎨 توليد صورة جديدة بـ DALL-E 3 للوصف:', prompt);
+    console.log('🎭 النمط المطلوب:', style);
 
-    // تحسين الوصف حسب النمط
+    // تحسين الوصف حسب النمط المطلوب
     let enhancedPrompt = prompt;
+    
     if (style === 'realistic') {
-      enhancedPrompt = `${prompt}, photorealistic, high quality, 8K resolution, professional photography`;
+      enhancedPrompt = `${prompt}, photorealistic, high quality, detailed, professional photography, 8K resolution`;
     } else if (style === 'anime') {
-      enhancedPrompt = `${prompt}, anime style, Japanese animation, detailed artwork`;
+      enhancedPrompt = `${prompt}, anime style, Japanese animation, detailed artwork, manga style`;
     } else if (style === 'cartoon') {
-      enhancedPrompt = `${prompt}, cartoon style, 3D animation, colorful, Disney-like quality`;
+      enhancedPrompt = `${prompt}, cartoon style, 3D animation, colorful, Disney-Pixar style`;
     } else if (style === 'digital-art') {
-      enhancedPrompt = `${prompt}, digital art, concept art, detailed illustration`;
+      enhancedPrompt = `${prompt}, digital art, concept art, detailed illustration, artstation quality`;
     } else if (style === 'oil-painting') {
-      enhancedPrompt = `${prompt}, oil painting style, classical art, masterpiece`;
+      enhancedPrompt = `${prompt}, oil painting style, classical art, renaissance masterpiece`;
     } else if (style === 'watercolor') {
-      enhancedPrompt = `${prompt}, watercolor painting, artistic, soft colors`;
+      enhancedPrompt = `${prompt}, watercolor painting, artistic, soft colors, traditional art`;
     }
 
+    console.log('✨ الوصف المحسن:', enhancedPrompt);
+
+    // استدعاء DALL-E 3 API
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -54,26 +60,36 @@ serve(async (req) => {
       }),
     });
 
+    console.log('📡 استجابة OpenAI API:', response.status);
+
     if (!response.ok) {
-      const error = await response.json();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+      const errorData = await response.json();
+      console.error('❌ خطأ من OpenAI API:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
     const imageUrl = data.data[0].url;
 
-    console.log('✅ تم توليد الصورة بنجاح');
+    console.log('✅ تم توليد الصورة بنجاح، URL:', imageUrl.substring(0, 50) + '...');
 
-    return new Response(JSON.stringify({ imageUrl }), {
+    return new Response(JSON.stringify({ 
+      imageUrl,
+      prompt: enhancedPrompt,
+      style,
+      timestamp: new Date().toISOString()
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('❌ خطأ في توليد الصورة:', error);
+    console.error('❌ خطأ في Edge Function:', error.message);
+    console.error('🔍 تفاصيل الخطأ:', error);
+    
     return new Response(JSON.stringify({ 
       error: 'فشل في توليد الصورة', 
-      details: error.message 
+      details: error.message,
+      timestamp: new Date().toISOString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

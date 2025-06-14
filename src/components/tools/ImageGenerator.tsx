@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,18 +40,24 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
     if (!prompt.trim()) return;
 
     setIsLoading(true);
-    setGeneratedImages([]);
     
     try {
-      console.log('🎨 بدء توليد الصورة بـ DALL-E 3...');
+      console.log('🎨 بدء توليد صورة جديدة...');
+      console.log('📝 الوصف:', prompt);
+      console.log('🎭 النمط:', style);
       
       const imageUrl = await generateImageWithOpenAI(prompt, style);
-      setGeneratedImages([imageUrl]);
+      
+      // إضافة timestamp لضمان تحديث الصورة
+      const uniqueImageUrl = `${imageUrl}?t=${Date.now()}`;
+      
+      setGeneratedImages([uniqueImageUrl]);
       setCurrentImageIndex(0);
+      
       console.log('✅ تم توليد الصورة بنجاح');
     } catch (error) {
       console.error('❌ خطأ في توليد الصورة:', error);
-      alert('حدث خطأ في توليد الصورة. يرجى المحاولة مرة أخرى.');
+      alert(`حدث خطأ في توليد الصورة: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -68,9 +73,12 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       
       const combinedPrompt = `${prompt}, ${editPrompt}`;
       const editedImageUrl = await generateImageWithOpenAI(combinedPrompt, style);
+      
+      // إضافة timestamp لضمان تحديث الصورة
+      const uniqueImageUrl = `${editedImageUrl}?t=${Date.now()}`;
 
       const updatedImages = [...generatedImages];
-      updatedImages[currentImageIndex] = editedImageUrl;
+      updatedImages[currentImageIndex] = uniqueImageUrl;
       setGeneratedImages(updatedImages);
       
       setEditMode(false);
@@ -78,7 +86,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       console.log('✅ تم تعديل الصورة بنجاح');
     } catch (error) {
       console.error('❌ خطأ في تعديل الصورة:', error);
-      alert('حدث خطأ في تعديل الصورة. يرجى المحاولة مرة أخرى.');
+      alert(`حدث خطأ في تعديل الصورة: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -182,7 +190,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                     disabled={isLoading || !prompt.trim()}
                     className="btn-gradient w-full py-3"
                   >
-                    {isLoading ? '🎨 جاري الإنشاء...' : '✨ أنشئ الصورة'}
+                    {isLoading ? '🎨 جاري الإنشاء...' : '✨ أنشئ صورة جديدة'}
                   </Button>
                 </>
               ) : (
@@ -226,7 +234,24 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                     ✏️ عدّل الصورة
                   </Button>
                   <Button 
-                    onClick={downloadCurrentImage}
+                    onClick={async () => {
+                      if (!generatedImages[currentImageIndex]) return;
+                      
+                      try {
+                        const response = await fetch(generatedImages[currentImageIndex]);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `generated-image-${Date.now()}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                      } catch (error) {
+                        console.error('خطأ في تحميل الصورة:', error);
+                      }
+                    }}
                     variant="outline"
                     className="border-white/20 hover:bg-white/10"
                   >
@@ -268,11 +293,13 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                     src={generatedImages[currentImageIndex]} 
                     alt="Generated"
                     className="w-full h-full object-cover rounded-lg"
+                    key={generatedImages[currentImageIndex]}
                   />
                 ) : (
                   <div className="text-center">
                     <div className="text-6xl mb-4">🎨</div>
                     <p className="text-gray-400 font-cairo">الصورة ستظهر هنا</p>
+                    <p className="text-xs text-gray-500 font-cairo mt-2">املأ الوصف واضغط "أنشئ صورة جديدة"</p>
                   </div>
                 )}
               </div>
@@ -283,6 +310,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                     <div><strong>الوصف:</strong> {prompt}</div>
                     <div><strong>النمط:</strong> {artStyles.find(s => s.value === style)?.label}</div>
                     <div><strong>المولد:</strong> DALL-E 3 من OpenAI</div>
+                    <div><strong>الوقت:</strong> {new Date().toLocaleString('ar-SA')}</div>
                   </div>
                 </div>
               )}
@@ -312,8 +340,15 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       </div>
 
       <FloatingAIAssistant 
-        context={getCurrentContext()}
-        onApply={handleAIApply}
+        context={`مولد الصور - الوصف الحالي: ${prompt} - النمط: ${style} - ${generatedImages.length > 0 ? 'تم إنشاء صورة' : 'لم يتم إنشاء صورة بعد'}`}
+        onApply={(suggestion: string) => {
+          if (suggestion.includes('تعديل') || suggestion.includes('عدل')) {
+            setEditPrompt(suggestion);
+            setEditMode(true);
+          } else {
+            setPrompt(suggestion);
+          }
+        }}
       />
     </div>
   );
