@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Home } from 'lucide-react';
 import { generateImageWithOpenAI } from '@/services/openaiService';
 import FloatingAIAssistant from '@/components/common/FloatingAIAssistant';
+import { toast } from 'sonner';
 
 interface ImageGeneratorProps {
   onNavigate?: (section: string) => void;
@@ -37,44 +38,51 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
   ];
 
   const generateImage = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) {
+      toast.error('يرجى إدخال وصف للصورة');
+      return;
+    }
 
     setIsLoading(true);
     
     try {
-      console.log('🎨 بدء توليد صورة جديدة...');
-      console.log('📝 الوصف:', prompt);
-      console.log('🎭 النمط:', style);
+      console.log('🎨 Starting image generation...');
+      console.log('📝 Prompt:', prompt);
+      console.log('🎭 Style:', style);
       
       const imageUrl = await generateImageWithOpenAI(prompt, style);
       
-      // إضافة timestamp لضمان تحديث الصورة
+      // Add timestamp to ensure image refresh
       const uniqueImageUrl = `${imageUrl}?t=${Date.now()}`;
       
       setGeneratedImages([uniqueImageUrl]);
       setCurrentImageIndex(0);
       
-      console.log('✅ تم توليد الصورة بنجاح');
+      toast.success('تم توليد الصورة بنجاح! 🎨');
+      console.log('✅ Image generated successfully');
     } catch (error) {
-      console.error('❌ خطأ في توليد الصورة:', error);
-      alert(`حدث خطأ في توليد الصورة: ${error.message}`);
+      console.error('❌ Error generating image:', error);
+      toast.error(`فشل في توليد الصورة: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const editCurrentImage = async () => {
-    if (!editPrompt.trim() || generatedImages.length === 0) return;
+    if (!editPrompt.trim() || generatedImages.length === 0) {
+      toast.error('يرجى إدخال تعديلات على الصورة');
+      return;
+    }
 
     setIsLoading(true);
     
     try {
-      console.log('✏️ بدء تعديل الصورة...');
+      console.log('✏️ Starting image editing...');
       
       const combinedPrompt = `${prompt}, ${editPrompt}`;
       const editedImageUrl = await generateImageWithOpenAI(combinedPrompt, style);
       
-      // إضافة timestamp لضمان تحديث الصورة
+      // Add timestamp to ensure image refresh
       const uniqueImageUrl = `${editedImageUrl}?t=${Date.now()}`;
 
       const updatedImages = [...generatedImages];
@@ -83,10 +91,11 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       
       setEditMode(false);
       setEditPrompt('');
-      console.log('✅ تم تعديل الصورة بنجاح');
+      toast.success('تم تعديل الصورة بنجاح! ✨');
+      console.log('✅ Image edited successfully');
     } catch (error) {
-      console.error('❌ خطأ في تعديل الصورة:', error);
-      alert(`حدث خطأ في تعديل الصورة: ${error.message}`);
+      console.error('❌ Error editing image:', error);
+      toast.error(`فشل في تعديل الصورة: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -106,8 +115,10 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      toast.success('تم تحميل الصورة بنجاح! 📥');
     } catch (error) {
-      console.error('خطأ في تحميل الصورة:', error);
+      console.error('Error downloading image:', error);
+      toast.error('فشل في تحميل الصورة');
     }
   };
 
@@ -234,24 +245,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                     ✏️ عدّل الصورة
                   </Button>
                   <Button 
-                    onClick={async () => {
-                      if (!generatedImages[currentImageIndex]) return;
-                      
-                      try {
-                        const response = await fetch(generatedImages[currentImageIndex]);
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `generated-image-${Date.now()}.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(url);
-                      } catch (error) {
-                        console.error('خطأ في تحميل الصورة:', error);
-                      }
-                    }}
+                    onClick={downloadCurrentImage}
                     variant="outline"
                     className="border-white/20 hover:bg-white/10"
                   >

@@ -1,23 +1,22 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const generateImageWithOpenAI = async (prompt: string, style: string): Promise<string> => {
   try {
-    console.log('🎨 استدعاء Edge Function لتوليد الصورة...');
-    console.log('📝 الوصف:', prompt);
-    console.log('🎭 النمط:', style);
+    console.log('🎨 Calling Edge Function to generate image...');
+    console.log('📝 Prompt:', prompt);
+    console.log('🎭 Style:', style);
     
     const { data, error } = await supabase.functions.invoke('generate-image-openai', {
       body: { prompt, style }
     });
 
     if (error) {
-      console.error('❌ خطأ في Edge Function:', error);
+      console.error('❌ Edge Function error:', error);
       throw new Error(`خطأ في الاتصال: ${error.message}`);
     }
 
-    if (data.error) {
-      console.error('❌ خطأ من OpenAI:', data.error);
+    if (!data.success) {
+      console.error('❌ OpenAI error:', data.error);
       throw new Error(data.details || data.error);
     }
 
@@ -25,10 +24,10 @@ export const generateImageWithOpenAI = async (prompt: string, style: string): Pr
       throw new Error('لم يتم إرجاع رابط الصورة من الخادم');
     }
 
-    console.log('✅ تم توليد الصورة بنجاح');
+    console.log('✅ Image generated successfully');
     return data.imageUrl;
   } catch (error) {
-    console.error('❌ خطأ في توليد الصورة:', error);
+    console.error('❌ Error generating image:', error);
     throw error;
   }
 };
@@ -41,20 +40,20 @@ export const generateWebsiteWithOpenAI = async (
   editRequest?: string
 ): Promise<string> => {
   try {
-    console.log('🌐 استدعاء Edge Function لتوليد الموقع...');
-    console.log('📋 البيانات:', { title, description, type, color, editRequest });
+    console.log('🌐 Calling Edge Function to generate website...');
+    console.log('📋 Data:', { title, description, type, color, editRequest });
     
     const { data, error } = await supabase.functions.invoke('generate-website-openai', {
       body: { title, description, type, color, editRequest }
     });
 
     if (error) {
-      console.error('❌ خطأ في Edge Function:', error);
+      console.error('❌ Edge Function error:', error);
       throw new Error(`خطأ في الاتصال: ${error.message}`);
     }
 
     if (data.error) {
-      console.error('❌ خطأ من OpenAI:', data.error);
+      console.error('❌ OpenAI error:', data.error);
       throw new Error(data.details || data.error);
     }
 
@@ -62,10 +61,10 @@ export const generateWebsiteWithOpenAI = async (
       throw new Error('لم يتم إرجاع كود الموقع من الخادم');
     }
 
-    console.log('✅ تم توليد الموقع بنجاح، طول الكود:', data.websiteCode.length);
+    console.log('✅ Website generated successfully, length of code:', data.websiteCode.length);
     return data.websiteCode;
   } catch (error) {
-    console.error('❌ خطأ في توليد الموقع:', error);
+    console.error('❌ Error generating website:', error);
     throw error;
   }
 };
