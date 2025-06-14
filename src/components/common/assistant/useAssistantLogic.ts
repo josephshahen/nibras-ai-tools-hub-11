@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +18,6 @@ export const useAssistantLogic = () => {
 
   useEffect(() => {
     checkExistingAccount();
-    // إزالة الفحص الدوري - المستخدم يزور متى يريد
   }, []);
 
   // فحص الحساب الموجود والتأكد من إنشاء زيارة دائمة
@@ -48,26 +46,23 @@ export const useAssistantLogic = () => {
         }
 
         if (userExists) {
-          // Type cast the preferences to UserPreferences
           const preferences = userExists.preferences as UserPreferences | null;
           
           setUserId(storedUserId);
-          setIsActive(assistantActive); // يعتمد على التفضيلات المحفوظة
+          setIsActive(assistantActive);
           setSearchCategory(preferences?.searchCategory || storedCategory);
           setCustomSearch(preferences?.customSearch || storedCustomSearch);
           setLastActiveTime(userExists.last_active || new Date().toISOString());
           
-          // تحميل البيانات حسب حالة التفعيل
+          // تحميل البيانات
+          await loadActivities(storedUserId);
           if (assistantActive) {
-            await loadActivities(storedUserId);
             await loadRecommendations(storedUserId);
-          } else {
-            await loadActivities(storedUserId); // تحميل الأنشطة السابقة فقط
           }
           
           console.log('✅ تم تحميل حساب موجود بنجاح');
           
-          // تحديث آخر زيارة دائماً (زيارة دائمة للموقع)
+          // تحديث آخر زيارة دائماً
           await supabase
             .from('persistent_users')
             .update({ last_active: new Date().toISOString() })
@@ -76,7 +71,6 @@ export const useAssistantLogic = () => {
           console.log('🏠 تم تسجيل زيارة دائمة للموقع');
         } else {
           console.log('⚠️ المستخدم غير موجود في قاعدة البيانات، إعادة إنشاء...');
-          // إنشاء حساب دائم حتى لو لم يكن موجود
           await createPermanentAccount(storedUserId, storedCategory, storedCustomSearch, false);
         }
       }
@@ -172,7 +166,7 @@ export const useAssistantLogic = () => {
         .from('persistent_users')
         .insert({
           user_id: newUserId,
-          status: activate ? 'active' : 'inactive', // يعتمد على رغبة المستخدم
+          status: activate ? 'active' : 'inactive',
           preferences: preferences as any,
           created_at: new Date().toISOString(),
           last_active: new Date().toISOString()
@@ -187,7 +181,6 @@ export const useAssistantLogic = () => {
 
       console.log('✅ تم إنشاء حساب دائم بنجاح:', data);
 
-      // حفظ في localStorage
       localStorage.setItem('lovableAI_userId', newUserId);
       localStorage.setItem('lovableAI_active', activate.toString());
       localStorage.setItem('lovableAI_searchCategory', finalCategory);
@@ -205,10 +198,10 @@ export const useAssistantLogic = () => {
       
       const welcomeActivity = {
         activity_type: 'suggestion',
-        title: activate ? '🎉 تم تفعيل المساعد الذكي الدائم بنجاح!' : '🏠 تم إنشاء حساب دائم في الموقع!',
+        title: activate ? '🎉 تم تفعيل المساعد الذكي!' : '🏠 تم إنشاء حساب دائم!',
         description: activate 
-          ? `سيبحث لك المساعد عن كل جديد في "${searchText}" باستمرار ولن يتوقف أبداً. ستجد التوصيات هنا عند عودتك.`
-          : `تم إنشاء حسابك الدائم في الموقع. يمكنك تفعيل المساعد في أي وقت للبحث في "${searchText}".`,
+          ? `سيبحث لك المساعد عن كل جديد في "${searchText}" باستمرار.`
+          : `تم إنشاء حسابك الدائم. يمكنك تفعيل المساعد للبحث في "${searchText}".`,
         user_id: newUserId
       };
 
@@ -222,17 +215,16 @@ export const useAssistantLogic = () => {
         console.log('✅ تم إنشاء نشاط الترحيب');
       }
 
-      // تحميل الأنشطة
       await loadActivities(newUserId);
       if (activate) {
         await loadRecommendations(newUserId);
       }
 
       toast({
-        title: activate ? "🚀 تم تفعيل المساعد الذكي الدائم!" : "🏠 تم إنشاء حسابك الدائم!",
+        title: activate ? "🚀 تم تفعيل المساعد الذكي!" : "🏠 تم إنشاء حسابك الدائم!",
         description: activate 
-          ? `سيعمل إلى الأبد ولن يتوقف عن البحث في "${searchText}"`
-          : `حسابك محفوظ للأبد. يمكنك تفعيل المساعد في أي وقت`,
+          ? `سيعمل ويبحث في "${searchText}"`
+          : `حسابك محفوظ. يمكنك تفعيل المساعد في أي وقت`,
       });
 
     } catch (error) {
