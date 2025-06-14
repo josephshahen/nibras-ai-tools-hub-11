@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { AssistantActivity } from './types';
+import { AssistantActivity, UserPreferences } from './types';
 import { generateUserId, getCurrentSearchText } from './utils';
 import { searchCategories } from './constants';
 
@@ -47,10 +47,13 @@ export const useAssistantLogic = () => {
         }
 
         if (userExists) {
+          // Type cast the preferences to UserPreferences
+          const preferences = userExists.preferences as UserPreferences | null;
+          
           setUserId(storedUserId);
           setIsActive(true);
-          setSearchCategory(userExists.preferences?.searchCategory || storedCategory);
-          setCustomSearch(userExists.preferences?.customSearch || storedCustomSearch);
+          setSearchCategory(preferences?.searchCategory || storedCategory);
+          setCustomSearch(preferences?.customSearch || storedCustomSearch);
           setLastActiveTime(userExists.last_active || new Date().toISOString());
           
           await loadActivities(storedUserId);
@@ -167,7 +170,7 @@ export const useAssistantLogic = () => {
       
       console.log('🆕 إنشاء حساب دائم جديد:', newUserId);
       
-      const preferences = { 
+      const preferences: UserPreferences = { 
         searchCategory,
         ...(searchCategory === 'custom' && { customSearch })
       };
@@ -284,7 +287,7 @@ export const useAssistantLogic = () => {
     if (!userId) return;
 
     try {
-      const preferences = { 
+      const preferences: UserPreferences = { 
         searchCategory: newCategory,
         ...(newCategory === 'custom' && { customSearch })
       };
