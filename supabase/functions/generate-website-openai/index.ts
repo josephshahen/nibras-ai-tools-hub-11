@@ -16,16 +16,25 @@ serve(async (req) => {
     const { title, description, type, color, editRequest } = await req.json();
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
+    console.log('🔑 التحقق من API Key:', openAIApiKey ? 'موجود' : 'غير موجود');
+
     if (!openAIApiKey) {
       console.error('❌ OpenAI API key not found');
-      throw new Error('OpenAI API key not configured');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key غير مضبوط في إعدادات المشروع', 
+        details: 'يرجى إضافة OPENAI_API_KEY في Supabase Secrets'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log('🌐 توليد موقع جديد بـ GPT-4 لـ:', title);
-    console.log('📋 الوصف:', description);
+    console.log('🌐 طلب توليد موقع جديد');
+    console.log('📋 العنوان:', title);
+    console.log('📝 الوصف:', description);
     console.log('🎨 النوع:', type, 'اللون:', color);
 
-    const systemPrompt = `أنت مطور ويب خبير متخصص في إنشاء مواقع ويب كاملة وجاهزة للاستخدام.
+    const systemPrompt = `أنت مطور ويب خبير متخصص في إنشاء مواقع ويب كاملة وجاهزة للاستخدام باللغة العربية.
 
 قم بإنشاء موقع ويب كامل بـ HTML، CSS، JavaScript يتضمن:
 
@@ -78,15 +87,53 @@ ${editRequest ? `تعديل مطلوب: ${editRequest}` : ''}
       }),
     });
 
-    console.log('📡 استجابة OpenAI API:', response.status);
+    console.log('📡 استجابة OpenAI:', response.status, response.statusText);
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ خطأ من OpenAI API:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      const errorText = await response.text();
+      console.error('❌ خطأ من OpenAI API:', errorText);
+      
+      let errorMessage = 'خطأ غير معروف من OpenAI';
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error) {
+          if (errorData.error.code === 'invalid_api_key') {
+            errorMessage = 'مفتاح OpenAI API غير صالح. تحقق من صحة المفتاح.';
+          } else if (errorData.error.code === 'insufficient_quota') {
+            errorMessage = 'انتهت حصة OpenAI API. تحقق من رصيدك.';
+          } else if (errorData.error.message) {
+            errorMessage = errorData.error.message;
+          }
+        }
+      } catch (e) {
+        console.error('خطأ في تحليل رد OpenAI:', e);
+        errorMessage = `خطأ HTTP ${response.status}: ${response.statusText}`;
+      }
+
+      return new Response(JSON.stringify({ 
+        error: 'فشل في توليد الموقع من OpenAI', 
+        details: errorMessage,
+        status: response.status
+      }), {
+        status: response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      console.error('❌ رد غير متوقع من OpenAI:', data);
+      return new Response(JSON.stringify({ 
+        error: 'رد غير صالح من OpenAI', 
+        details: 'لم يتم إرجاع محتوى الموقع'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     let websiteCode = data.choices[0].message.content;
 
     console.log('📝 تم استلام الكود، الطول:', websiteCode.length);
@@ -117,12 +164,11 @@ ${editRequest ? `تعديل مطلوب: ${editRequest}` : ''}
     });
 
   } catch (error) {
-    console.error('❌ خطأ في Edge Function:', error.message);
-    console.error('🔍 تفاصيل الخطأ:', error);
+    console.error('❌ خطأ عام في Edge Function:', error);
     
     return new Response(JSON.stringify({ 
-      error: 'فشل في توليد الموقع', 
-      details: error.message,
+      error: 'خطأ داخلي في الخادم', 
+      details: error.message || 'خطأ غير معروف',
       timestamp: new Date().toISOString()
     }), {
       status: 500,

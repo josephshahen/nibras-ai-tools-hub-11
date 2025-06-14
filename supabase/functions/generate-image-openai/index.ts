@@ -16,15 +16,24 @@ serve(async (req) => {
     const { prompt, style } = await req.json();
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
+    console.log('🔑 التحقق من API Key:', openAIApiKey ? 'موجود' : 'غير موجود');
+
     if (!openAIApiKey) {
       console.error('❌ OpenAI API key not found');
-      throw new Error('OpenAI API key not configured');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key غير مضبوط في إعدادات المشروع', 
+        details: 'يرجى إضافة OPENAI_API_KEY في Supabase Secrets'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log('🎨 توليد صورة جديدة بـ DALL-E 3 للوصف:', prompt);
-    console.log('🎭 النمط المطلوب:', style);
+    console.log('🎨 طلب توليد صورة جديدة');
+    console.log('📝 الوصف:', prompt);
+    console.log('🎭 النمط:', style);
 
-    // تحسين الوصف حسب النمط المطلوب
+    // تحسين الوصف حسب النمط
     let enhancedPrompt = prompt;
     
     if (style === 'realistic') {
@@ -60,18 +69,55 @@ serve(async (req) => {
       }),
     });
 
-    console.log('📡 استجابة OpenAI API:', response.status);
+    console.log('📡 استجابة OpenAI:', response.status, response.statusText);
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ خطأ من OpenAI API:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      const errorText = await response.text();
+      console.error('❌ خطأ من OpenAI API:', errorText);
+      
+      let errorMessage = 'خطأ غير معروف من OpenAI';
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error) {
+          if (errorData.error.code === 'invalid_api_key') {
+            errorMessage = 'مفتاح OpenAI API غير صالح. تحقق من صحة المفتاح.';
+          } else if (errorData.error.code === 'insufficient_quota') {
+            errorMessage = 'انتهت حصة OpenAI API. تحقق من رصيدك.';
+          } else if (errorData.error.message) {
+            errorMessage = errorData.error.message;
+          }
+        }
+      } catch (e) {
+        console.error('خطأ في تحليل رد OpenAI:', e);
+        errorMessage = `خطأ HTTP ${response.status}: ${response.statusText}`;
+      }
+
+      return new Response(JSON.stringify({ 
+        error: 'فشل في توليد الصورة من OpenAI', 
+        details: errorMessage,
+        status: response.status
+      }), {
+        status: response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
-    const imageUrl = data.data[0].url;
+    
+    if (!data.data || !data.data[0] || !data.data[0].url) {
+      console.error('❌ رد غير متوقع من OpenAI:', data);
+      return new Response(JSON.stringify({ 
+        error: 'رد غير صالح من OpenAI', 
+        details: 'لم يتم إرجاع رابط الصورة'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    console.log('✅ تم توليد الصورة بنجاح، URL:', imageUrl.substring(0, 50) + '...');
+    const imageUrl = data.data[0].url;
+    console.log('✅ تم توليد الصورة بنجاح');
 
     return new Response(JSON.stringify({ 
       imageUrl,
@@ -83,12 +129,11 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('❌ خطأ في Edge Function:', error.message);
-    console.error('🔍 تفاصيل الخطأ:', error);
+    console.error('❌ خطأ عام في Edge Function:', error);
     
     return new Response(JSON.stringify({ 
-      error: 'فشل في توليد الصورة', 
-      details: error.message,
+      error: 'خطأ داخلي في الخادم', 
+      details: error.message || 'خطأ غير معروف',
       timestamp: new Date().toISOString()
     }), {
       status: 500,
