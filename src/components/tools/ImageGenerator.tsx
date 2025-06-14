@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Home } from 'lucide-react';
+import { Home, AlertCircle, RefreshCw } from 'lucide-react';
 import { generateImageWithOpenAI } from '@/services/openaiService';
 import FloatingAIAssistant from '@/components/common/FloatingAIAssistant';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [editPrompt, setEditPrompt] = useState('');
+  const [lastError, setLastError] = useState<string>('');
 
   const artStyles = [
     { value: 'realistic', label: '📸 واقعي فائق الجودة', description: 'صور فوتوغرافية احترافية عالية الدقة' },
@@ -44,6 +45,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
     }
 
     setIsLoading(true);
+    setLastError('');
     
     try {
       console.log('🎨 Starting image generation...');
@@ -52,7 +54,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       
       const imageUrl = await generateImageWithOpenAI(prompt, style);
       
-      // Add timestamp to ensure image refresh
+      // إضافة timestamp لضمان تحديث الصورة
       const uniqueImageUrl = `${imageUrl}?t=${Date.now()}`;
       
       setGeneratedImages([uniqueImageUrl]);
@@ -62,7 +64,19 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       console.log('✅ Image generated successfully');
     } catch (error) {
       console.error('❌ Error generating image:', error);
-      toast.error(`فشل في توليد الصورة: ${error.message}`);
+      const errorMessage = error.message || 'خطأ غير معروف في توليد الصورة';
+      setLastError(errorMessage);
+      
+      // رسائل خطأ محسنة
+      if (errorMessage.includes('مفتاح') || errorMessage.includes('API')) {
+        toast.error('مشكلة في مفتاح OpenAI API - تحقق من الإعدادات');
+      } else if (errorMessage.includes('حصة') || errorMessage.includes('رصيد')) {
+        toast.error('انتهت حصة OpenAI - تحقق من رصيدك');
+      } else if (errorMessage.includes('سياسة')) {
+        toast.error('المحتوى ينتهك سياسة OpenAI - عدّل الوصف');
+      } else {
+        toast.error(`فشل في توليد الصورة: ${errorMessage}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +89,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
     }
 
     setIsLoading(true);
+    setLastError('');
     
     try {
       console.log('✏️ Starting image editing...');
@@ -82,7 +97,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       const combinedPrompt = `${prompt}, ${editPrompt}`;
       const editedImageUrl = await generateImageWithOpenAI(combinedPrompt, style);
       
-      // Add timestamp to ensure image refresh
+      // إضافة timestamp لضمان تحديث الصورة
       const uniqueImageUrl = `${editedImageUrl}?t=${Date.now()}`;
 
       const updatedImages = [...generatedImages];
@@ -95,10 +110,17 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
       console.log('✅ Image edited successfully');
     } catch (error) {
       console.error('❌ Error editing image:', error);
-      toast.error(`فشل في تعديل الصورة: ${error.message}`);
+      const errorMessage = error.message || 'خطأ في تعديل الصورة';
+      setLastError(errorMessage);
+      toast.error(`فشل في تعديل الصورة: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const retryGeneration = () => {
+    setLastError('');
+    generateImage();
   };
 
   const downloadCurrentImage = async () => {
@@ -203,6 +225,27 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                   >
                     {isLoading ? '🎨 جاري الإنشاء...' : '✨ أنشئ صورة جديدة'}
                   </Button>
+
+                  {lastError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <div className="flex items-start gap-2 text-red-400 text-sm font-cairo">
+                        <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                        <div>
+                          <div className="font-semibold mb-1">خطأ في توليد الصورة:</div>
+                          <div>{lastError}</div>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={retryGeneration}
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 border-red-500/20 hover:bg-red-500/10 text-red-400"
+                      >
+                        <RefreshCw size={14} className="ml-1" />
+                        حاول مرة أخرى
+                      </Button>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -225,7 +268,7 @@ const ImageGenerator = ({ onNavigate }: ImageGeneratorProps) => {
                       {isLoading ? '✏️ جاري التعديل...' : '✅ طبق التعديل'}
                     </Button>
                     <Button 
-                      onClick={() => {setEditMode(false); setEditPrompt('');}}
+                      onClick={() => {setEditMode(false); setEditPrompt(''); setLastError('');}}
                       variant="outline"
                       className="border-white/20 hover:bg-white/10"
                     >
