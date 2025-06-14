@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -170,17 +171,17 @@ export const useAssistantLogic = () => {
       
       console.log('🆕 إنشاء حساب دائم جديد:', newUserId);
       
-      const preferences: UserPreferences = { 
+      const preferences = { 
         searchCategory,
         ...(searchCategory === 'custom' && { customSearch })
-      };
+      } as UserPreferences;
       
       const { data, error } = await supabase
         .from('persistent_users')
         .insert({
           user_id: newUserId,
           status: 'active',
-          preferences,
+          preferences: preferences as any, // Cast to any for Json compatibility
           created_at: new Date().toISOString(),
           last_active: new Date().toISOString()
         })
@@ -287,15 +288,15 @@ export const useAssistantLogic = () => {
     if (!userId) return;
 
     try {
-      const preferences: UserPreferences = { 
+      const preferences = { 
         searchCategory: newCategory,
         ...(newCategory === 'custom' && { customSearch })
-      };
+      } as UserPreferences;
 
       const { error } = await supabase
         .from('persistent_users')
         .update({ 
-          preferences,
+          preferences: preferences as any, // Cast to any for Json compatibility
           last_active: new Date().toISOString()
         })
         .eq('user_id', userId);

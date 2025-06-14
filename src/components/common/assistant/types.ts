@@ -1,4 +1,5 @@
 
+
 export interface AssistantActivity {
   id: string;
   type: 'search' | 'analysis' | 'suggestion' | 'discovery';
@@ -16,4 +17,6 @@ export interface SearchCategory {
 export interface UserPreferences {
   searchCategory?: string;
   customSearch?: string;
+  [key: string]: any; // This makes it compatible with Json type
 }
+
