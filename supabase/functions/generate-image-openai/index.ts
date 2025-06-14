@@ -49,8 +49,7 @@ serve(async (req) => {
         prompt: enhancedPrompt,
         n: 1,
         size: '1024x1024',
-        quality: 'high',
-        response_format: 'b64_json'
+        quality: 'high'
       }),
     });
 
@@ -61,6 +60,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    // gpt-image-1 يرجع base64 مباشرة
     const imageBase64 = data.data[0].b64_json;
     const imageUrl = `data:image/png;base64,${imageBase64}`;
 
