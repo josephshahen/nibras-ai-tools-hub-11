@@ -1,5 +1,16 @@
+// OpenAI Service - Updated to use Gemini for website generation
 
+import { generateWebsiteWithGemini, checkBackendHealth } from './geminiService';
 import { supabase } from '@/integrations/supabase/client';
+
+// Check if Gemini backend is available
+let isGeminiAvailable = false;
+
+// Initialize backend availability check
+(async () => {
+  isGeminiAvailable = await checkBackendHealth();
+  console.log('🔍 Gemini Backend Status for OpenAI Service:', isGeminiAvailable ? 'Available' : 'Unavailable');
+})();
 
 export const generateImageWithOpenAI = async (prompt: string, style: string): Promise<string> => {
   try {
@@ -77,8 +88,24 @@ export const generateWebsiteWithOpenAI = async (
   editRequest?: string
 ): Promise<string> => {
   try {
-    console.log('🌐 Calling Edge Function to generate website...');
+    console.log('🌐 Generating website...');
     console.log('📋 Data:', { title, description, type, color, editRequest });
+    
+    // Try Gemini first if available
+    if (isGeminiAvailable) {
+      console.log('🤖 Using Gemini for website generation...');
+      return await generateWebsiteWithGemini(title, description, type, color, editRequest);
+    }
+    
+    // Check if Gemini backend is available
+    isGeminiAvailable = await checkBackendHealth();
+    if (isGeminiAvailable) {
+      console.log('🤖 Gemini backend reconnected, using Gemini...');
+      return await generateWebsiteWithGemini(title, description, type, color, editRequest);
+    }
+    
+    // Fallback to Supabase Edge Function (OpenAI)
+    console.log('🔄 Falling back to OpenAI Edge Function...');
     
     const { data, error } = await supabase.functions.invoke('generate-website-openai', {
       body: { title, description, type, color, editRequest }
@@ -102,6 +129,79 @@ export const generateWebsiteWithOpenAI = async (
     return data.websiteCode;
   } catch (error) {
     console.error('❌ Error generating website:', error);
-    throw error;
+    
+    // Provide a fallback HTML template
+    const fallbackWebsite = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body {
+            font-family: 'Cairo', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, ${color}22, ${color}11);
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: ${color};
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        .content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .error-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>${title}</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="error-notice">
+            <strong>ملاحظة:</strong> تم إنشاء هذا الموقع كنموذج أساسي بسبب عدم توفر خدمة الذكاء الاصطناعي حالياً.
+        </div>
+        
+        <div class="content">
+            <h2>مرحباً بكم في ${title}</h2>
+            <p>${description}</p>
+            <p>هذا موقع من نوع: ${type}</p>
+            <p>يمكنك تطوير هذا الموقع وإضافة المزيد من المحتوى والميزات حسب احتياجاتك.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    console.log('🔄 Using fallback website template');
+    return fallbackWebsite;
   }
 };
